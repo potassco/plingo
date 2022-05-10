@@ -1,0 +1,25 @@
+% Sort declarations
+boolean(t;f).
+
+% Random selection rules
+&random { male(B)    : boolean(B) }.
+&random { recover(B) : boolean(B) }.
+&random { drug(B)    : boolean(B) }.
+
+% Probability atoms
+&pr { male(t)    } = "1/2".
+&pr { recover(t) } = "0.6"  :- male(t), drug(t).
+&pr { recover(t) } = "0.7"  :- male(t), drug(f).
+&pr { recover(t) } = "0.2"  :- male(f), drug(t).
+&pr { recover(t) } = "0.3"  :- male(f), drug(f).
+&pr { drug(t)    } = "0.75" :- male(t).
+&pr { drug(t)    } = "0.25" :- male(f).
+
+
+% Observations and actions
+#const do_drug = t.
+&do{ drug(do_drug) }.
+
+#show male/1.
+#show recover/1.
+#show drug/1.
