@@ -41,11 +41,9 @@ class ProbabilityModule():
         self.model_weights = [
             exp(-(w * 10**(-self.power_of_ten))) for w in self.model_weights
         ]
-        if self.frontend == 'lpmln-alt' and self.priorities != [0]:
+        if self.frontend == 'lpmln' and self.priorities != [0]:
             hard_weights = [costs[0] for costs in model_costs]
             min_alpha = min(hard_weights)
-            print(model_costs)
-            print(min_alpha)
             self.model_weights = [
                 w if hard_weights[i] == min_alpha else 0
                 for i, w in enumerate(self.model_weights)

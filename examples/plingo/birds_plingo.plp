@@ -6,4 +6,4 @@ bird(X) :- migratoryBird(X).
 :~ not residentBird(jo). ["2"@0,0]
 
 { migratoryBird(jo) }.
-:~ not migratoryBird(jo). ["1"@0,0]
+:~ not migratoryBird(jo). ["1"@0,1]

@@ -165,7 +165,7 @@ class PlingoTransformer(Transformer):
         head = rule.head
         body = rule.body
 
-        if self.frontend != 'lpmln-alt' and str(
+        if self.frontend != 'lpmln' and str(
                 head.ast_type) != 'ASTType.TheoryAtom' and len(body) == 0:
             return rule
 
@@ -193,8 +193,8 @@ class PlingoTransformer(Transformer):
             asp_rules = getattr(self.plog, f'convert_{self.theory_type}')(head,
                                                                           body)
 
-        # Hard rules are translated only if option --hr is activated
-        elif self.weight == 'alpha' and self.frontend != 'lpmln-alt':
+        # Hard rules are translated only if frontend mode is 'lpmln'
+        elif self.weight == 'alpha' and self.frontend != 'lpmln':
             self.rule_idx += 1
             return rule
         else:

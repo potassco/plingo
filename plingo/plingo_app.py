@@ -37,7 +37,7 @@ class PlingoApp(Application):
     two_solve_calls: Flag
     opt_enum: Flag
     use_backend: Flag
-    mode: str
+    frontend: str
     query: List[Tuple[Symbol, List[int]]]
     evidence_file: str
     balanced_models: Optional[int]
@@ -60,9 +60,10 @@ class PlingoApp(Application):
 
     def _parse_frontend(self, value: str) -> bool:
         """
-        Parse the given mode.
+        Parse the given frontend mode.
         Possible options are:
-        lpmln, lpmln-alt, problog and plog
+        lpmln, lpmln-alt, problog and plog.
+        By default the variable is set to plingo.
         """
         if value not in ['lpmln', 'lpmln-alt', 'problog', 'plog']:
             return False
@@ -153,9 +154,9 @@ class PlingoApp(Application):
             self.use_backend)
 
     def validate_options(self) -> bool:
-        if self.two_solve_calls and self.frontend != 'lpmln-alt':
+        if self.two_solve_calls and self.frontend != 'lpmln':
             print(
-                'The two-solve-calls mode only works if hard rules are translated (--mode lpmln-alt).'
+                'The two-solve-calls mode only works if hard rules are translated (--frontend lpmln).'
             )
             return False
         if self.balanced_models is not None and not self.opt_enum:
