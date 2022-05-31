@@ -9,7 +9,7 @@ class ProbabilityModule():
     '''
     Calculates probabilities of models and query atoms.
     '''
-    translate_hr: Flag
+    mode: str
     two_solve_calls: Flag
     power_of_ten: int
     priorities: List[int]
@@ -18,9 +18,9 @@ class ProbabilityModule():
     model_probs: List[float]
 
     def __init__(self, model_costs: List[int], priorities: List[int],
-                 options: Union[Flag, Flag, int]):
+                 options: Union[str, Flag, int]):
         # TODO: Do weights need to be saved?
-        self.translate_hr = options[0].flag
+        self.frontend = options[0]
         self.two_solve_calls = options[1].flag
         self.power_of_ten = options[2]
         self.priorities = priorities
@@ -41,7 +41,7 @@ class ProbabilityModule():
         self.model_weights = [
             exp(-(w * 10**(-self.power_of_ten))) for w in self.model_weights
         ]
-        if self.translate_hr and self.priorities != [0]:
+        if self.frontend == 'lpmln-alt' and self.priorities != [0]:
             hard_weights = [costs[0] for costs in model_costs]
             min_alpha = min(hard_weights)
             print(model_costs)

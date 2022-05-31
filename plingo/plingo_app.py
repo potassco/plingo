@@ -32,13 +32,12 @@ class PlingoApp(Application):
     Plingo can compute other probabilistic logic languages
     LP^MLN, ProbLog and P-Log.
     '''
-    translate_hard_rules: Flag
     display_all_probs: Flag
     use_unsat_approach: Flag
     two_solve_calls: Flag
-    calculate_plog: Flag
     opt_enum: Flag
     use_backend: Flag
+    mode: str
     query: List[Tuple[Symbol, List[int]]]
     evidence_file: str
     balanced_models: Optional[int]
@@ -48,17 +47,27 @@ class PlingoApp(Application):
     version: str = "1.0"
 
     def __init__(self):
-        self.translate_hard_rules = Flag(False)
         self.display_all_probs = Flag(False)
         self.use_unsat_approach = Flag(False)
         self.two_solve_calls = Flag(False)
-        self.calculate_plog = Flag(False)
         self.opt_enum = Flag(False)
         self.use_backend = Flag(False)
+        self.frontend = None
         self.query = []
         self.evidence_file = ''
         self.balanced_models = None
         self.power_of_ten = 5
+
+    def _parse_frontend(self, value: str) -> bool:
+        """
+        Parse the given mode.
+        Possible options are:
+        lpmln, lpmln-alt, problog and plog
+        """
+        if value not in ['lpmln', 'lpmln-alt', 'problog', 'plog']:
+            return False
+        self.frontend = value
+        return True
 
     def _parse_query(self, value: str) -> bool:
         """
@@ -107,8 +116,6 @@ class PlingoApp(Application):
         Register application option.
         """
         group = 'Plingo Options'
-        options.add_flag(group, 'hr', 'Translate hard rules',
-                         self.translate_hard_rules)
         options.add_flag(group, 'all,a', 'Display all probabilities',
                          self.display_all_probs)
         options.add_flag(group, 'unsat', 'Convert using unsat atoms',
@@ -118,8 +125,9 @@ class PlingoApp(Application):
             '''Use two solve calls (first determines LPMLN stable models, second their probabilities).
                             Works only with --hr options.''',
             self.two_solve_calls)
-        options.add_flag(group, 'plog', 'Calculate P-Log program.',
-                         self.calculate_plog)
+        options.add(group, 'frontend',
+                    'Frontend mode (lpmln, lpmln-alt, problog, plog).',
+                    self._parse_frontend)
         options.add(group,
                     'query',
                     'Probability of query atom',
@@ -145,9 +153,9 @@ class PlingoApp(Application):
             self.use_backend)
 
     def validate_options(self) -> bool:
-        if self.two_solve_calls and not self.translate_hard_rules:
+        if self.two_solve_calls and self.frontend != 'lpmln-alt':
             print(
-                'The two-solve-calls mode only works if hard rules are translated (--hr).'
+                'The two-solve-calls mode only works if hard rules are translated (--mode lpmln-alt).'
             )
             return False
         if self.balanced_models is not None and not self.opt_enum:
@@ -170,8 +178,8 @@ class PlingoApp(Application):
 
     def _convert(self, ctl: Control, files: Sequence[str]):
         options = [
-            self.translate_hard_rules, self.use_unsat_approach,
-            self.two_solve_calls, self.power_of_ten
+            self.frontend, self.use_unsat_approach, self.two_solve_calls,
+            self.power_of_ten
         ]
         with ProgramBuilder(ctl) as b:
             pt = PlingoTransformer(options)
@@ -186,7 +194,7 @@ class PlingoApp(Application):
         ctl.add("base", [], self.evidence_file)
 
         # Add meta file for calculating P-Log
-        if self.calculate_plog:
+        if self.frontend == 'plog':
             enable_python()
             from importlib.resources import files as importfiles
             meta_path = importfiles('plingo').joinpath('meta.lp')
@@ -262,9 +270,9 @@ class PlingoApp(Application):
         # elif not self.two_solve_calls and any(
         #         x > 1 for x in priorities):
         #     print(priorities)
-        probs = ProbabilityModule(model_costs, priorities, [
-            self.translate_hard_rules, self.two_solve_calls, self.power_of_ten
-        ])
+        probs = ProbabilityModule(
+            model_costs, priorities,
+            [self.frontend, self.two_solve_calls, self.power_of_ten])
         if self.display_all_probs:
             probs.print_probs()
         if self.query != []:
