@@ -208,6 +208,16 @@ class PlingoTransformer(Transformer):
         return asp_rules[-1]
 
     def visit_Minimize(self, rule: AST, *args: Any, **kwargs: Any) -> AST:
+        if self.frontend == 'plingo':
+            # In plingo weak constraint weights can be strings
+            symbol = rule.weight.symbol
+            symbol_type = str(symbol.type).replace('SymbolType.', '')
+            if symbol_type == 'String':
+                weight = ast.SymbolicTerm(
+                    rule.location,
+                    calculate_weight(float(symbol.string), self.power_of_ten))
+                rule = ast.Minimize(rule.location, weight, rule.priority,
+                                    rule.terms, rule.body)
         return rule
 
     def visit_Variable(self, variable: AST) -> AST:

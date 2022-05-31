@@ -52,7 +52,7 @@ class PlingoApp(Application):
         self.two_solve_calls = Flag(False)
         self.opt_enum = Flag(False)
         self.use_backend = Flag(False)
-        self.frontend = None
+        self.frontend = 'plingo'
         self.query = []
         self.evidence_file = ''
         self.balanced_models = None
