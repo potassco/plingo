@@ -38,9 +38,8 @@ plingo -h
 ```
 
 #### MAP estimate
-
 ```
-plingo examples/lpmln/birds.lp
+plingo examples/lpmln/birds.plp --frontend lpmln-alt
 ```
 ```
 plingo version 1.0
@@ -65,7 +64,7 @@ CPU Time     : 0.005s
 To list all stable models, add the flag `--all`. 
 
 ```
-plingo examples/lpmln/birds.lp --all
+plingo examples/lpmln/birds.plp --all --frontend lpmln-alt
 ```
 ```
 plingo version 1.0
@@ -123,13 +122,11 @@ A number of examples can be found in the directory `examples`. There are also tw
 
     Provides an evidence file to the program (`.lp` file with clingo syntax rules)
 
-- `--hr`
+- `--frontend=mode`
 
-    Converts hard rules as well. Useful for debugging or resolving inconsistencies in the program.
-
-- `--plog`
-
-    Necessary when calculating P-log programs.
+    Specifies which frontend to use ('lpmln', 'lpmln-alt', 'problog', 'plog').
+    Mode 'lpmln-alt' is the alternative definition where hard rules have to be satisfied. 
+    When using mode 'lpmln' hard rules are also translated whiche can be useful for debugging or resolving inconsistencies in the program.
 
 - `--query='atom'`
 
