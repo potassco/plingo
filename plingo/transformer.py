@@ -21,15 +21,15 @@ class PlingoTransformer(Transformer):
     &weight/1, &log/1 or &problog/1 in the body.
     '''
     rule_idx: int
-    translate_hr: Flag
+    mode: str
     use_unsat: Flag
     two_solve_calls: Flag
     power_of_ten: int
     plog: ConvertPlog
 
-    def __init__(self, options: Union[Flag, Flag, Flag, int]):
+    def __init__(self, options: Union[str, Flag, Flag, int]):
         self.rule_idx = 0
-        self.translate_hr = options[0].flag
+        self.frontend = options[0]
         self.use_unsat = options[1].flag
         self.two_solve_calls = options[2].flag
         self.power_of_ten = options[3]
@@ -165,7 +165,7 @@ class PlingoTransformer(Transformer):
         head = rule.head
         body = rule.body
 
-        if not self.translate_hr and str(
+        if self.frontend != 'lpmln' and str(
                 head.ast_type) != 'ASTType.TheoryAtom' and len(body) == 0:
             return rule
 
@@ -193,8 +193,8 @@ class PlingoTransformer(Transformer):
             asp_rules = getattr(self.plog, f'convert_{self.theory_type}')(head,
                                                                           body)
 
-        # Hard rules are translated only if option --hr is activated
-        elif self.weight == 'alpha' and not self.translate_hr:
+        # Hard rules are translated only if frontend mode is 'lpmln'
+        elif self.weight == 'alpha' and self.frontend != 'lpmln':
             self.rule_idx += 1
             return rule
         else:
@@ -208,6 +208,16 @@ class PlingoTransformer(Transformer):
         return asp_rules[-1]
 
     def visit_Minimize(self, rule: AST, *args: Any, **kwargs: Any) -> AST:
+        if self.frontend == 'plingo':
+            # In plingo weak constraint weights can be strings
+            symbol = rule.weight.symbol
+            symbol_type = str(symbol.type).replace('SymbolType.', '')
+            if symbol_type == 'String':
+                weight = ast.SymbolicTerm(
+                    rule.location,
+                    calculate_weight(float(symbol.string), self.power_of_ten))
+                rule = ast.Minimize(rule.location, weight, rule.priority,
+                                    rule.terms, rule.body)
         return rule
 
     def visit_Variable(self, variable: AST) -> AST:

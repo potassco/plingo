@@ -1,34 +1,34 @@
 # P-log examples
-This directory contains the five examples from [[1]](#1) plus a variant of the Monty Hall problem taken from [[2]](#2). To run any of the examples add the `--plog` option.
+This directory contains the five examples from [[1]](#1) plus a variant of the Monty Hall problem taken from [[2]](#2). To run any of the examples add the `--frontend=plog` option.
 The folder `plog2.0` contains some shorts examples and tests from the most recent [plog implementation](https://github.com/iensen/plog2.0) plus an incomplete script to convert instances in the plog2.0 format.
 
 ## Instances
 ### Dice
 This is the introductory example from [[1]](#1) demonstrating how P-log programs can be input and calculated with our system. 
 ```
-python plingo.py examples/plog/dice.lp --plog --all
+plingo examples/plog/dice.plp --frontend=plog --all
 ```
 
 ### Monty Hall
 P-log encoding of the famous Monty Hall Problem
 ```
-python plingo.py examples/plog/monty_hall.lp --plog --all
+plingo examples/plog/monty_hall.plp --frontend=plog --all
 ```
 There is also a variation with four door and assigned probabilities
 ```
-python plingo.py examples/plog/monty_hall_variant.lp --plog --all
+plingo examples/plog/monty_hall_variant.plp --frontend=plog --all
 ```
 
 ### Simpson's paradox
 Simpson's paradox is a phenomenom where some event seems more likely in the general population but less likely in every subpopulation (or vice versa). In this case we are looking at a patient who is wondering whether he should take a drug or not. For both females and males not taking the drug has a higher recovery rate. However, when looking at the entire population the recovery rate seems to be lower when taking the drug. One way to resolve this paradox is by using the causal reasoning of P-log. For adjusting whether or not the patient takes the drug, set constant `do_drug` to `t` or `f` (default is `do_drug=t`). 
 ```
-python plingo.py examples/plog/simpsons_paradox.lp --plog --all -c do_drug=t
+plingo examples/plog/simpsons_paradox.plp --frontend=plog --all -c do_drug=t
 ```
 
 ### Moving robot
 This encoding contains a robot and three doors that are reachable from the robot's position. The doors can be open or closed but the robot cannot open the doors. It is known that the robot navigation is usually successful. However, a malfunction can cause the robot to go off course and enter any one of the open rooms. The basic encoding contains some additional information that can be activated through the constant `x`. While `x=0` contains only the basic encoding, when `x=1`  there is an additional fact that the robot goes into room `r0`.
 ```
-python plingo.py examples/plog/moving_robot.lp --plog --all -c x=1
+plingo examples/plog/moving_robot.plp --frontend=plog --all -c x=1
 ```
 Accordingly, the output states that the robot is in room `r0`.
 ```
@@ -40,7 +40,7 @@ SATISFIABLE
 ```
 For `x=2` the robot is now addtionally malfunctioning which activates the random selection rule. 
 ```
-python plingo.py examples/plog/moving_robot.lp --plog --all -c x=2
+plingo examples/plog/moving_robot.plp --frontend=plog --all -c x=2
 ```
 Now it is uncertain in what room the robot will land and there are three possible worlds with equal probability. 
 ```
@@ -71,7 +71,7 @@ The squirrel looks for food every day starting with "Day 1" and predict its chan
     2. She has not found her food in all past days
 The instance can be run with the constant `days` that specifies for which day the squirrel wants to predict whether to find the acorns. You can run it with
 ```
-python plingo.py examples/plog/bayesian_squirrel.lp --plog --all -c days=1
+plingo examples/plog/bayesian_squirrel.plp --frontend=plog --all -c days=1
 ```
 With these assumptions it can be seen that the squirrel's initial belief for finding the food in patch `p1` decreases every day.
 ## References

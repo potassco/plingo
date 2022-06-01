@@ -1,56 +1,61 @@
+from math import exp
 from typing import List, Union, Tuple
 
 from clingo.application import Flag
 from clingo.symbol import Symbol
-
-import numpy as np
-# from numpy.typing import ndarray
 
 
 class ProbabilityModule():
     '''
     Calculates probabilities of models and query atoms.
     '''
-    translate_hr: Flag
+    mode: str
     two_solve_calls: Flag
     power_of_ten: int
     priorities: List[int]
-    model_weights: np.ndarray
-    stable_models: np.ndarray
-    model_probs: np.ndarray
+    model_weights: List[float]
+    stable_models: List[int]
+    model_probs: List[float]
 
     def __init__(self, model_costs: List[int], priorities: List[int],
-                 options: Union[Flag, Flag, int]):
+                 options: Union[str, Flag, int]):
         # TODO: Do weights need to be saved?
-        self.translate_hr = options[0].flag
+        self.frontend = options[0]
         self.two_solve_calls = options[1].flag
         self.power_of_ten = options[2]
         self.priorities = priorities
         self.model_weights = []
         self.stable_models = []
         self.model_probs = []
-        self.calculate_probabilites(np.array(model_costs))
+        self.calculate_probabilites(model_costs)
 
-    def calculate_probabilites(self, model_costs: np.ndarray):
+    def calculate_probabilites(self, model_costs: List[int]):
         '''
         Calculates probabilities based on list of model costs.
         If hard rules have been translated
         find only stable models of LP^MLN
         (ones with max hard rules satisfied).
         '''
-        self.model_weights = np.exp(-(model_costs * 10**(-self.power_of_ten)))
-        if self.two_solve_calls:
-            self.model_weights = self.model_weights[:, -1]
-        elif self.translate_hr and self.priorities != [0]:
-            hard_weights = model_costs[:, 0]
-            min_alpha = hard_weights.min()
-            self.model_weights = self.model_weights[:, -1]
-            self.model_weights[hard_weights != min_alpha] = 0
+        # Extract only level 0 costs which correspond to weights and apply calculations
+        self.model_weights = [costs[-1] for costs in model_costs]
+        self.model_weights = [
+            exp(-(w * 10**(-self.power_of_ten))) for w in self.model_weights
+        ]
+        if self.frontend == 'lpmln' and self.priorities != [0]:
+            hard_weights = [costs[0] for costs in model_costs]
+            min_alpha = min(hard_weights)
+            self.model_weights = [
+                w if hard_weights[i] == min_alpha else 0
+                for i, w in enumerate(self.model_weights)
+            ]
 
-        self.model_weights = self.model_weights.flatten()
-        self.stable_models = np.where(self.model_weights != 0)[0]
-        normalization_const = self.model_weights.sum()
-        self.model_probs = self.model_weights / normalization_const
+        self.stable_models = [
+            i for i, w in enumerate(self.model_weights) if w != 0
+        ]
+        normalization_const = sum(self.model_weights)
+        self.model_probs = [
+            w / normalization_const for w in self.model_weights
+        ]
         # TODO: Unittest/Check that probabilities sum up to 1
 
     def print_probs(self):
@@ -74,6 +79,6 @@ class ProbabilityModule():
         '''
         print('\n')
         for q in queries:
-            prob = self.model_probs[q[1]].sum()
+            prob = sum([self.model_probs[idx] for idx in q[1]])
             print(f'{str(q[0])}: {prob:.5f}')
         print('\n')

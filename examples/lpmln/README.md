@@ -7,19 +7,19 @@ This directory contains two examples taken from LP^MLN [[1]](#1) [[3]](#3).
 ### Birds
 This example is taken from [[1]](#1). Imagine there are two databases who provide inconsistent information. With LP^MLN this can be resolved. To get all stable models and their probabilities
 ```
-python plingo.py examples/birds.lp --all
+plingo examples/lpmln/birds.plp --all --frontend=lpmln
 ```
 or if additional evidence should be provided
 ```
-python plingo.py examples/birds.lp --evid=examples/birds_evid.lp --all
+plingo examples/lpmln/birds.plp --evid=examples/lpmln/birds.evid --all --frontend=lpmln
 ```
-The translation of the birds example to the plingo language can be found in file `birds_plingo.lp`.
+The translation of the birds example to the plingo language can be found in file `birds_plingo.plp`.
 
 ### Firing Squad
 This example is originally from Pearl's causal model [[2]](#2) and shows counterfactual reasoning. The LP^MLN encoding stems from [[3]](#3). There are two rifleman A and B. Either one of them shooting causes the prisoner's death (D). The court orders the execution (U) with probability 0.7 which in turn causes the Captain to give the order to shoot (C). Further, rifleman A is nervous (W) with probability 0.2. The nervousness causes him to shoot as well. We are looking to answer the query "Given that the prisoner is dead, what is the probability that the prisoner would be alive if Rifleman A had not shot?". 
 With the command
 ```
-python plingo.py examples/firing_squad.lp --evid=examples/firing_squad_evid.lp --q ds
+plingo examples/lpmln/firing_squad.plp --evid=examples/lpmln/firing_squad.evid --query ds --frontend=lpmln-alt
 ```
 we obtain `ds: 0.92105`, which means there is a 8% chance that the prisoner would be alive.
 ## References
