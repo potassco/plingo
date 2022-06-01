@@ -1,7 +1,11 @@
 # Plingo
 
-A **probabilistic extension of [clingo](https://potassco.org/clingo/)** based on LP^MLN. 
-It provides front-ends for *lpmln* [[1]](#1), *p-log* [[2]](#2), and *problog* [[3]](#3).
+A system for **probabilistic reasoning in clingo**.
+
+The system is based on LP^MLN, and provides **front-ends** for different probabilistic logic languages:
+- *lpmln* [[1]](#1)
+- *p-log* [[2]](#2)
+- *problog* [[3]](#3).
 
 While the basic **syntax** of *plingo* is the same as the one of *clingo*, its **semantics** relies on re-interpreting the cost of a stable model at priority level `0` as a measure of its probability.
 

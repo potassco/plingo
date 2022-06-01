@@ -11,4 +11,4 @@ Vcs-Git: https://github.com/potassco/plingo.git
 Package: python3-plingo
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python3:Depends}
-Description: A probabilistic extension for clingo based on LP^MLN.
+Description: A system for probabilistic reasoning in clingo
