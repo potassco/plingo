@@ -52,7 +52,7 @@ conda:
         license: MIT
         license_family: MIT
         license_file: LICENSE
-        summary: A probabilistic extension for clingo based on LP^MLN.
+        summary: A system for probabilistic reasoning in clingo
         doc_url: https://github.com/potassco/{{ name }}
         dev_url: https://github.com/potassco/{{ name }}
 
@@ -62,7 +62,7 @@ ppa:
     upstream_name:
         'plingo'
     initial_version:
-        '0.1.0'
+        '1.0.0'
     initial_date:
         'Sat, 30 May 2022 12:00:00 +0100'
     contact_url:
@@ -100,7 +100,7 @@ ppa:
         python3-plingo:
             Architecture: 'any'
             Depends: '${shlibs:Depends}, ${misc:Depends}, ${python3:Depends}'
-            Description: 'A probabilistic extension for clingo based on LP^MLN.'
+            Description: 'A system for probabilistic reasoning in clingo'
     files:
         docs: |
             README.md

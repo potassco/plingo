@@ -1,48 +1,95 @@
 # Plingo
-A probabilistic extension for clingo based on LP^MLN.
 
-## Introduction
-LPMLN is a probabilistic logic language that provides a simple way to add weights to ASP-style rules. This not only make it possible to reason with uncertainty but also to resolve inconsistencies in the rules. In that way meaningful information can be extracted from a program even if there are two or more contradicting rules.
-Further the Maximum a posteriori (MAP) estimate, the most probable stable model, can be inferred from a program using LPMLN.
+A system for **probabilistic reasoning in clingo**.
 
+The system is based on LP^MLN, and provides **front-ends** for different probabilistic logic languages:
+- *lpmln* [[1]](#1)
+- *p-log* [[2]](#2)
+- *problog* [[3]](#3).
+
+While the basic **syntax** of *plingo* is the same as the one of *clingo*, its **semantics** relies on re-interpreting the cost of a stable model at priority level `0` as a measure of its probability.
+
+Solving exploits the relation between most probable stable models and optimal stable models [[4]](#4); it relies on *clingo*'s optimization and enumeration modes, as well as an **approximation method** based on answer set enumeration in the order of optimality [[5]](#5).
+
+The *plingo* system can be used to solve two **reasoning tasks**:
+- MAP inference: find a most probable stable model
+- Marginal inference: find all stable models and their probabilities
+
+A number of **examples** can be found [here](https://github.com/potassco/plingo/tree/main/examples). There are also sub-directories containing examples using our front-ends for the other probabilistic logic languages.
 
 ## Installation
 
-- Clone the repository
+#### With coda 
+
+```
+conda install -c potassco plingo
+```
+
+#### With pip
+
+```
+pip install plingo
+```
+
+#### From source 
 
 ```
 git clone https://github.com/nrueh/plingo.git
-```
-
-- Move to the repository
-
-```
 cd plingo
-```
-
-- Install project and requirements with pip. 
-  
-```
 pip install .
 ```
 
 
 ## Usage
 
-`plingo` is an extension of [clingo](https://potassco.org/clingo/), therefore it counts with all of clingo's functionality with new options.
+`plingo` is an extension of clingo, therefore it counts with all of clingo's functionality with new options.
 
-Run the following command and look at `plingo`'s options under Plingo Options:
+Run the following command and look at `plingo`'s latest options under Plingo Options:
 
 ```
 plingo -h
 ```
 
-#### MAP estimate
+#### Command line options
+
+
+- `--all`
+
+    Enumerates all stable models and prints their probabilities.
+
+- `--evid=file`
+
+    Provides an evidence file to the program (`.lp` file with clingo syntax rules)
+
+- `--frontend=mode`
+
+    Specifies which frontend to use (´lpmln´, ´lpmln-alt´, ´problog´, ´plog´).
+    Mode ´lpmln-alt´ is the alternative definition where hard rules have to be satisfied. 
+    When using mode ´lpmln hard rules are also translated which can be useful for debugging or resolving inconsistencies in the program.
+
+- `--query='atom'`
+
+    Adds a query atom `atom`, e.g. using the example from above `--query='bird(jo)'`. The argument has to be inside single quotation marks (otherwise the command-line might not be able to parse it correctly).
+
+- `--two-solve-calls`
+
+    Uses two solve calls: The first one finds the minimal bound for weak constraints priorities higher than 0. The second one solves for probabilistic stable models of LP^MLN.
+
+- `--unsat`
+
+    Uses the conversion with `unsat` atoms
+
+#### Examples 
+##### MAP estimate
+
+Find a most probable stable model
+
+
 ```
 plingo examples/lpmln/birds.plp --frontend lpmln-alt
 ```
 ```
-plingo version 1.0
+plingo version 1.0.0
 Reading from examples/birds.lp
 Solving...
 Answer: 1
@@ -60,14 +107,16 @@ Calls        : 1
 Time         : 0.005s (Solving: 0.00s 1st Model: 0.00s Unsat: 0.00s)
 CPU Time     : 0.005s
 ```
-#### Marginal probabilities
+
+##### Marginal probabilities
+
 To list all stable models, add the flag `--all`. 
 
 ```
 plingo examples/lpmln/birds.plp --all --frontend lpmln-alt
 ```
 ```
-plingo version 1.0
+plingo version 1.0.0
 Reading from examples/birds.lp
 Solving...
 Answer: 1
@@ -95,53 +144,7 @@ Time         : 0.006s (Solving: 0.00s 1st Model: 0.00s Unsat: 0.00s)
 CPU Time     : 0.006s
 ```
 
-## Input
-Syntactically, LPMLN differs between "soft" rules and "hard" rules, where "soft" rules have a (real number) weight and "hard" rules the weight "alpha". 
-
-Weights can be added by the theory atom `&weight/1` to the body of a rule. The argument has to be an integer or a string containing a float or an expression like `2/3`. For example
-```
-a(X) :- b(X), &weight(5).
-b(X) :- &weight("-2/3").
-```
-Further it is possible to use the theory atoms `&log/1` or `&problog/1` which only accept strings as arguments. The atom `&log/1` uses the natural logarithm `log(p)` of its argument `p` as weight. The atom `&problog/1` uses the natural logarithm of `p/(1-p)` as its weight.
-Rules that do not have any weight in the body are assumed to be hard rules.
-
-To compute LPMLN programs, a rule in an LPMLN program is converted to ASP with weak constraints
-
-By default, only soft rules are converted. To convert hard rules as well, the `--hr` flag can be added on the command line. This option essentially makes hard rules optional, whereas in the default setting all hard rules have to be satisfied as usually in ASP.
-
-## Examples
-A number of examples can be found in the directory `examples`. There are also two sub-directories containing examples from the other probabilistic logic languages ProbLog and P-log.
-
-## Commandline options
-- `--all`
-
-    Enumerates all stable models and prints their probabilities.
-
-- `--evid=file`
-
-    Provides an evidence file to the program (`.lp` file with clingo syntax rules)
-
-- `--frontend=mode`
-
-    Specifies which frontend to use ('lpmln', 'lpmln-alt', 'problog', 'plog').
-    Mode 'lpmln-alt' is the alternative definition where hard rules have to be satisfied. 
-    When using mode 'lpmln' hard rules are also translated whiche can be useful for debugging or resolving inconsistencies in the program.
-
-- `--query='atom'`
-
-    Adds a query atom `atom`, e.g. using the example from above `--query='bird(jo)'`. The argument has to be inside single quotation marks (otherwise the command-line might not be able to parse it correctly).
-
-- `--two-solve-calls`
-
-    Uses two solve calls: The first one finds the minimal bound for weak constraints priorities higher than 0. The second one solves for probabilistic stable models of LP^MLN.
-
-- `--unsat`
-
-    Uses the conversion with `unsat` atoms
-
-
-### Approximation algorithm
+#### Approximation algorithm
 For large problems it is infeasible to determine all stable models. 
 Plingo offers an option to determine approximate probabilities using
 answer set enumeration by optimality (ASEO) [[1]](#1).
@@ -161,8 +164,44 @@ For approximation of probabilistic queries it is recommended to use the `--opt-e
 
     Adds constraints for query approximation in backend instead of using assumptions.
 
+
+## Input Language
+Syntactically, LPMLN differs between "soft" rules and "hard" rules, where "soft" rules have a (real number) weight and "hard" rules the weight "alpha". 
+
+Weights can be added by the theory atom `&weight/1` to the body of a rule. The argument has to be an integer or a string containing a float or an expression like `2/3`. For example
+```
+a(X) :- b(X), &weight(5).
+b(X) :- &weight("-2/3").
+```
+Further it is possible to use the theory atoms `&log/1` or `&problog/1` which only accept strings as arguments. The atom `&log/1` uses the natural logarithm `log(p)` of its argument `p` as weight. The atom `&problog/1` uses the natural logarithm of `p/(1-p)` as its weight.
+Rules that do not have any weight in the body are assumed to be hard rules.
+
+To compute LPMLN programs, a rule in an LPMLN program is converted to ASP with weak constraints
+
+By default, only soft rules are converted. To convert hard rules as well, the `--hr` flag can be added on the command line. This option essentially makes hard rules optional, whereas in the default setting all hard rules have to be satisfied as usually in ASP.
+
 ## References
 <a id="1">[1]</a>
+J. Lee and Y. Wang. (2016).
+Weighted Rules under the Stable Model Semantics
+
+
+<a id="2">[2]</a>
+C. Baral and M. Gelfond and J.N. Rushton. (2009),
+Probabilistic Reasoning with Answer Sets
+
+<a id="3">[3]</a>
+L. De Raedt and A. Kimmig and H. Toivonen
+ProbLog: A Probabilistic Prolog and its Applications in Link Discovery
+
+<a id="4">[4]</a>
+J. Lee and Z. Yang (2017).
+LPMLN, Weak Constraints and P-log
+
+<a id="5">[5]</a>
 J. Pajunen and T. Janhunen. (2021).
 Solution Enumeration by Optimality in Answer Set Programming.
 Theory and Practice of Logic Programming, 21(6), 750-767.
+
+
+

@@ -30,6 +30,6 @@ about:
   license: MIT
   license_family: MIT
   license_file: LICENSE
-  summary: A probabilistic extension for clingo based on LP^MLN.
+  summary: A system for probabilistic reasoning in clingo
   doc_url: https://github.com/potassco/{{ name }}
   dev_url: https://github.com/potassco/{{ name }}
