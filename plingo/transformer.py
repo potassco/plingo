@@ -201,8 +201,6 @@ class PlingoTransformer(Transformer):
             asp_rules = self._convert_rule(head, body)
             self.rule_idx += 1
 
-        for r in asp_rules:
-            print(r)
         # We might obtain more than one rule,
         for r in asp_rules[:-1]:
             builder.add(r)
