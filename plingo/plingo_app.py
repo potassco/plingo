@@ -1,6 +1,5 @@
 from typing import cast, Sequence, List, Tuple, Optional
 import sys
-import pkg_resources
 
 from clingo.application import Application, ApplicationOptions, Flag
 from clingo.ast import AST, ProgramBuilder, parse_files, parse_string
@@ -20,11 +19,6 @@ THEORY = """
     &query/1: constant, head
 }.
 """
-
-try:
-    VERSION = pkg_resources.require("plingo")[0].version
-except pkg_resources.DistributionNotFound:
-    VERSION = '0.0.0'
 
 def parse_callback(ast):
     return ast
@@ -49,7 +43,7 @@ class PlingoApp(Application):
     power_of_ten: int
 
     program_name: str = "plingo"
-    version: str = VERSION
+    version: str = "1.0.0"
 
     def __init__(self):
         self.display_all_probs = Flag(False)
