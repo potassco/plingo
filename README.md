@@ -59,9 +59,9 @@ plingo -h
 
 - `--frontend=mode`
 
-    Specifies which frontend to use ('lpmln', 'lpmln-alt', 'problog', 'plog').
-    Mode 'lpmln-alt' is the alternative definition where hard rules have to be satisfied. 
-    When using mode 'lpmln' hard rules are also translated which can be useful for debugging or resolving inconsistencies in the program.
+    Specifies which frontend to use (´lpmln´, ´lpmln-alt´, ´problog´, ´plog´).
+    Mode ´lpmln-alt´ is the alternative definition where hard rules have to be satisfied. 
+    When using mode ´lpmln hard rules are also translated which can be useful for debugging or resolving inconsistencies in the program.
 
 - `--query='atom'`
 
@@ -75,11 +75,12 @@ plingo -h
 
     Uses the conversion with `unsat` atoms
 
-#### MAP estimate
+#### Examples 
+##### MAP estimate
 
 Find a most probable stable model
 
-#####Example
+
 ```
 plingo examples/lpmln/birds.plp --frontend lpmln-alt
 ```
@@ -103,11 +104,10 @@ Time         : 0.005s (Solving: 0.00s 1st Model: 0.00s Unsat: 0.00s)
 CPU Time     : 0.005s
 ```
 
-#### Marginal probabilities
+##### Marginal probabilities
 
 To list all stable models, add the flag `--all`. 
 
-#####Example
 ```
 plingo examples/lpmln/birds.plp --all --frontend lpmln-alt
 ```
