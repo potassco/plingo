@@ -89,7 +89,7 @@ Find a most probable stable model
 plingo examples/lpmln/birds.plp --frontend lpmln-alt
 ```
 ```
-plingo version 1.0
+plingo version 1.0.0
 Reading from examples/birds.lp
 Solving...
 Answer: 1
@@ -116,7 +116,7 @@ To list all stable models, add the flag `--all`.
 plingo examples/lpmln/birds.plp --all --frontend lpmln-alt
 ```
 ```
-plingo version 1.0
+plingo version 1.0.0
 Reading from examples/birds.lp
 Solving...
 Answer: 1
