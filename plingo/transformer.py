@@ -201,6 +201,8 @@ class PlingoTransformer(Transformer):
             asp_rules = self._convert_rule(head, body)
             self.rule_idx += 1
 
+        for r in asp_rules:
+            print(r)
         # We might obtain more than one rule,
         for r in asp_rules[:-1]:
             builder.add(r)
@@ -213,11 +215,14 @@ class PlingoTransformer(Transformer):
             symbol = rule.weight.symbol
             symbol_type = str(symbol.type).replace('SymbolType.', '')
             if symbol_type == 'String':
-                weight = ast.SymbolicTerm(
-                    rule.location,
-                    calculate_weight(float(symbol.string), self.power_of_ten))
-                rule = ast.Minimize(rule.location, weight, rule.priority,
-                                    rule.terms, rule.body)
+                weight = float(eval(symbol.string))
+            elif symbol_type == 'Number':
+                weight = int(symbol.number)
+            weight = ast.SymbolicTerm(
+                rule.location,
+                calculate_weight((-1) * weight, self.power_of_ten))
+            rule = ast.Minimize(rule.location, weight, rule.priority,
+                                rule.terms, rule.body)
         return rule
 
     def visit_Variable(self, variable: AST) -> AST:
