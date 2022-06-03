@@ -11,6 +11,7 @@ from clingo.symbol import Function, Symbol
 from .transformer import PlingoTransformer
 from .query import collect_query, check_model_for_query
 from .opt import MinObs, OptEnum
+from .plog import get_meta_encoding
 from .probability import ProbabilityModule
 
 THEORY = """
@@ -19,6 +20,7 @@ THEORY = """
     &query/1: constant, head
 }.
 """
+
 
 def parse_callback(ast):
     return ast
@@ -196,9 +198,7 @@ class PlingoApp(Application):
         # Add meta file for calculating P-Log
         if self.frontend == 'plog':
             enable_python()
-            from importlib.resources import files as importfiles
-            meta_path = importfiles('plingo').joinpath('meta.lp')
-            ctl.add("base", [], self._read(meta_path))
+            ctl.add("base", [], get_meta_encoding())
             ctl.add("base", [], f'#const _plingo_factor={self.power_of_ten}.')
         if self.two_solve_calls:
             ctl.add("base", [], '#external _plingo_ext_helper.')
