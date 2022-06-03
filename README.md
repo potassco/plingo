@@ -63,7 +63,7 @@ plingo -h
 
 - `--frontend=mode`
 
-    Specifies which frontend to use (´lpmln´, ´lpmln-alt´, ´problog´, ´plog´).
+    Specifies which frontend to use (`lpmln`, `lpmln-alt`, `problog`, `plog`).
     Mode ´lpmln-alt´ is the alternative definition where hard rules have to be satisfied. 
     When using mode ´lpmln hard rules are also translated which can be useful for debugging or resolving inconsistencies in the program.
 
