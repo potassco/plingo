@@ -34,7 +34,7 @@ pip install plingo
 #### From source 
 
 ```
-git clone https://github.com/nrueh/plingo.git
+git clone https://github.com/potassco/plingo.git
 cd plingo
 pip install .
 ```
