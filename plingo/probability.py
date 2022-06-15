@@ -1,8 +1,9 @@
 from math import exp
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, Dict
 
 from clingo.application import Flag
 from clingo.symbol import Symbol
+from numpy import intersect1d
 
 
 class ProbabilityModule():
@@ -73,12 +74,33 @@ class ProbabilityModule():
         # TODO: Round off probabilities?
         print('\n')
 
-    def get_query_probability(self, queries: List[Tuple[Symbol, List[int]]]):
+    def get_query_probability(self, queries: List[Tuple[Symbol, List[int]]],
+                              atoms_to_check: Dict):
         '''
         Prints probabilities of query atoms.
         '''
         print('\n')
         for q in queries:
-            prob = sum([self.model_probs[idx] for idx in q[1]])
-            print(f'{str(q[0])}: {prob:.5f}')
+            query = str(q[0])
+            condition = str(q[1])
+            if condition == "":
+                prob = sum([
+                    self.model_probs[idx]
+                    for idx in atoms_to_check[query]['models']
+                ])
+                print(f'{query}: {prob:.5f}')
+            else:
+                # P(A | B) = P(A & B) / P(B),
+                # where A is query and B is condition
+                intersection = list(
+                    set(atoms_to_check[query]['models'])
+                    & set(atoms_to_check[condition]['models']))
+                prob_union = sum(
+                    [self.model_probs[idx] for idx in intersection])
+                prob_condition = sum([
+                    self.model_probs[idx]
+                    for idx in atoms_to_check[condition]['models']
+                ])
+                prob = prob_union / prob_condition
+                print(f'{query} | {condition}: {prob:.5f}')
         print('\n')

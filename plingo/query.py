@@ -1,4 +1,4 @@
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Dict
 
 from clingo.solving import Model
 from clingo.symbol import Function, Number, String, Symbol
@@ -26,15 +26,15 @@ def _convert_theory_arg(arg: Symbol) -> Symbol:
         return Function("", args)
 
 
-def _convert_theory_query(theory_atom: TheoryAtom) -> Function:
+def _convert_theory_query(atom: TheoryAtom) -> Function:
     '''
     Converts a &query/1 atom to a Symbol.
     '''
-    query_atom = theory_atom.term.arguments[0]
-    name = query_atom.name
+    # query_atom = theory_atom.term.arguments[0]
+    name = atom.name
     args = []
-    if query_atom.arguments != []:
-        args = [_convert_theory_arg(arg) for arg in query_atom.arguments]
+    if atom.arguments != []:
+        args = [_convert_theory_arg(arg) for arg in atom.arguments]
     return Function(name, args)
 
 
@@ -45,17 +45,27 @@ def collect_query(theory_atoms: List[TheoryAtom],
     For balanced query mode only one query atom is allowed.
     '''
     queries = []
+    atoms_to_check = {}
     for t in theory_atoms:
         if t.term.name == 'query':
-            queries.append((_convert_theory_query(t), []))
+            query = _convert_theory_query(t.term.arguments[0])
+            atoms_to_check[str(query)] = {'symbol': query, 'models': []}
+            condition = ""
+            if len(t.term.arguments) > 1:
+                condition = _convert_theory_query(t.term.arguments[1])
+                atoms_to_check[str(condition)] = {
+                    'symbol': condition,
+                    'models': []
+                }
+            queries.append((query, condition))
     if balanced_models is not None and len(queries) > 1:
         raise RuntimeError(
             'Only one (ground) query atom can be specified for balanced approximation.'
         )
-    return queries
+    return queries, atoms_to_check
 
 
-def check_model_for_query(queries: List[Tuple[Symbol, List[int]]],
+def check_model_for_query(queries: Dict,
                           model: Model,
                           model_number: Optional[int] = None):
     '''
@@ -64,7 +74,7 @@ def check_model_for_query(queries: List[Tuple[Symbol, List[int]]],
     '''
     if model_number is None:
         model_number = model.number - 1
-    for qa in queries:
-        if model.contains(qa[0]):
-            qa[1].append(model_number)
+    for qa in queries.values():
+        if model.contains(qa['symbol']):
+            qa['models'].append(model_number)
     return queries

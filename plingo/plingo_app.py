@@ -1,4 +1,4 @@
-from typing import cast, Sequence, List, Tuple, Optional
+from typing import cast, Sequence, List, Tuple, Optional, Dict
 import sys
 
 from clingo.application import Application, ApplicationOptions, Flag
@@ -17,7 +17,8 @@ from .probability import ProbabilityModule
 THEORY = """
 #theory plingo{
     constant { };
-    &query/1: constant, head
+    &query/1: constant, head;
+    &query/2: constant, head
 }.
 """
 
@@ -40,6 +41,7 @@ class PlingoApp(Application):
     use_backend: Flag
     frontend: str
     query: List[Tuple[Symbol, List[int]]]
+    atoms_to_check: Dict
     evidence_file: str
     balanced_models: Optional[int]
     power_of_ten: int
@@ -55,6 +57,7 @@ class PlingoApp(Application):
         self.use_backend = Flag(False)
         self.frontend = 'plingo'
         self.query = []
+        self.atoms_to_check = {}
         self.evidence_file = ''
         self.balanced_models = None
         self.power_of_ten = 5
@@ -254,8 +257,8 @@ class PlingoApp(Application):
                     if self.display_all_probs or self.query != []:
                         model_costs.append(model.cost)
                         if self.query != []:
-                            self.query = check_model_for_query(
-                                self.query, model)
+                            self.atoms_to_check = check_model_for_query(
+                                self.atoms_to_check, model)
         return model_costs
 
     def _probabilities(self, model_costs: List[int], priorities: List[int]):
@@ -276,7 +279,7 @@ class PlingoApp(Application):
         if self.display_all_probs:
             probs.print_probs()
         if self.query != []:
-            probs.get_query_probability(self.query)
+            probs.get_query_probability(self.query, self.atoms_to_check)
 
     def main(self, ctl: Control, files: Sequence[str]):
         '''
@@ -284,7 +287,8 @@ class PlingoApp(Application):
         '''
         obs = self._preprocessing(ctl, files)
         ctl.ground([("base", [])])
-        self.query = collect_query(ctl.theory_atoms, self.balanced_models)
+        self.query, self.atoms_to_check = collect_query(
+            ctl.theory_atoms, self.balanced_models)
         model_costs = self._solve(ctl, obs)
 
         if model_costs != []:
