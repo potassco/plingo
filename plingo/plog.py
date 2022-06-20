@@ -157,12 +157,16 @@ _plingo_densum(E,M) :- _plingo_default(E), M = #count{ A : _plingo_random(E,A), 
 :~ _plingo_pr(E,Pr), _plingo_no_int(E).       [   -@log(Pr,_plingo_factor),E]
 :- _plingo_pr(E,Pr), _plingo_no_int(E),           Pr = 0.
 
+% Weight calculation for default probabilities:
+% We calculate (1-Y)/M, with Y the total assigned probability
+% and M the number of default outcomes
+% This corresponds to log(1-Y)-log(M) (with negative weights because of optimization)
+
 :~ _plingo_numsum(E,Y), @intpr(1)-Y > 0.   [-@log(@frac(@intpr(1)-Y,@intpr(1)),_plingo_factor),num,E]
 :- _plingo_numsum(E,Y),                    @intpr(1) - Y <= 0.
 
-:~ _plingo_densum(E,M), M > 1.             [-@log(@frac(1,M),_plingo_factor),den,E]
+:~ _plingo_densum(E,M), M > 1.             [@log(M,_plingo_factor),den,E]
 :- _plingo_densum(E,M),                    M = 0.
-
 
 #script (python)
 from clingo import Number, String
@@ -170,9 +174,12 @@ from math import log as mathlog
 
 def log(a, factor):
     factor = factor.number
-    ln = mathlog(float(eval(a.string)))
-    weight = Number(int(ln * (10**factor)))
-    return weight
+    if str(a.type) == 'SymbolType.String':
+        a =  float(eval(a.string))
+    elif str(a.type) == 'SymbolType.Number':
+        a = a.number
+    ln = mathlog(a)
+    return Number(int(ln * (10**factor)))
 
 def frac(n,d):
     return String(f'{n.number}/{d.number}')
