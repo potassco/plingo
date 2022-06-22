@@ -83,9 +83,8 @@ ppa:
         - 'README.md'
         - 'LICENSE'
     distributions:
+        jammy:
         focal:
-            source:
-                Build-Depends: 'debhelper-compat (= 12), dh-python, python3-all, python3-setuptools, python3-clingo'
     source:
         Source: 'python3-plingo'
         Section: 'devel'
