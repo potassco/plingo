@@ -90,7 +90,6 @@ case "$action" in
         list
         ;;
     release)
-        branch="${@:$OPTIND+1:1}"
         wip=false
         ;&
     dev)
