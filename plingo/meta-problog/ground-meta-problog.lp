@@ -96,6 +96,7 @@ prob(not_hold(A)) :- neg(A).
 %
 % constraint
 %
+bot     :- constraint(B), size(B,0).
 bot     :- constraint(B), size(B,1),
            literal_tuple(B,S1,A1,1), true(S1,A1).
 bot     :- constraint(B), size(B,2),
