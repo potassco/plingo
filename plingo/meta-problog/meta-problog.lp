@@ -1,8 +1,14 @@
 % 
-% Usage: 
-%   clingo <files> --output=reify | problog --combine - meta-problog.lp
-% where <files> is a plingo program with optimize statements 
-% at level 0 and only at that level
+% Usage:
+%     clingo <files> --output=reify | problog --combine - meta-problog.lp
+% where <files> is a plingo program (accepted by clingo)
+% with optimize statements at level 0 and only at that level
+% where the weights have been multiplied by a factor of 100000.
+% This factor can be changed in the probabilistic fact for hold_weight/3.
+%
+% Queries should be specified by atoms of predicate query/1.
+% Predicate query/1 and the predicates of the atoms that are queried 
+% must be #shown in <files>.
 %
 
 :- use_module(library(aggregate)).
@@ -109,8 +115,8 @@ hold(A) :- weight(A,B,V), cont(B,1,V).
     bot :- constraint(B), conjunction(B).
 
 % show
-query(show(T)) :- output(T,B).
-show(T) :- output(T,B), conjunction(B).
+query(show(T)) :- output(query(T),B), conjunction(B).
+      show(T)  :- query(show(T)), output(T,B), conjunction(B).
 
 % bot is false
 evidence(bot,false).
@@ -128,7 +134,7 @@ bot :- neg(L), not not_hold(L), not hold(L).
 %
 % weights
 %
-E/(E+1) :: hold_weight(S,A,W) :- minimize(0,B), weighted_literal_tuple((B,S,A,W),_), E=2.71828182**W.
+E/(E+1) :: hold_weight(S,A,W) :- minimize(0,B), weighted_literal_tuple((B,S,A,W),_), E=2.71828182**(W/100000).
 bot :- minimize(0,B), weighted_literal_tuple((B,0,A,W),_),     hold_weight(0,A,W), not hold(A).
 bot :- minimize(0,B), weighted_literal_tuple((B,0,A,W),_), not hold_weight(0,A,W),     hold(A).
 bot :- minimize(0,B), weighted_literal_tuple((B,1,A,W),_), not hold_weight(1,A,W), not hold(A).

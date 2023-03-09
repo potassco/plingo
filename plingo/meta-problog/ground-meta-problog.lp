@@ -3,11 +3,19 @@
 %   clingo <files> --pre | clingo - --output=reify | clingo - ground-meta-problog.lp --text | \
 %   sed -n '/^\(evidence\|query\|show\|prob\|bot\|hold\|cont\)/ p' | sed -e 's:true(0,:hold(:g' -e 's:true(1,:not hold(:g' -e 's:true(2,:not_hold(:g' -e 's:true(3,:not not_hold(:g' | \
 %   problog --combine - probs-meta-problog.lp
-% where <files> is a plingo program with optimize statements at level 0 and only at that level
-% and the weights have been multiplied by 100000 (this factor be changed in probs-meta-problog.lp)
+% where <files> is a plingo program (accepted by clingo)
+% with optimize statements at level 0 and only at that level
+% where the weights have been multiplied by a factor of 100000.
+% This factor can be changed in the probabilistic facts of probs-meta-problog.lp.
+%
+% Queries should be specified by atoms of predicate query/1.
+% Predicate query/1 and the predicates of the atoms that are queried
+% must be #shown in <files>.
 %
 % We allow at most 4 elements per body, it is easy to extend the encoding for longer lengths
 :- literal_tuple(B,L), 5 { literal_tuple(B,LL) }.
+%
+
 
 %
 % preprocessing
@@ -15,6 +23,8 @@
 
 literal_tuple(B,0, L,P) :- literal_tuple(B,L), L>=0, P = #count{ LL: literal_tuple(B,LL), LL<=L }.
 literal_tuple(B,1,-L,P) :- literal_tuple(B,L), L< 0, P = #count{ LL: literal_tuple(B,LL), LL<=L }.
+%
+size(B,S) :- literal_tuple(B), S = { literal_tuple(B,L) }.
 %
 weighted_literal_tuple(B,0, L,W,P) :- rule(H,sum(B,V)), weighted_literal_tuple(B,L,W), L >= 0, P = #count{ LL : weighted_literal_tuple(B,LL,WW), LL<=L }.
 weighted_literal_tuple(B,1,-L,W,P) :- rule(H,sum(B,V)), weighted_literal_tuple(B,L,W), L <  0, P = #count{ LL : weighted_literal_tuple(B,LL,WW), LL<=L }.
@@ -24,8 +34,8 @@ weighted_literal_tuple(B,1,-L,W,P) :- rule(H,sum(B,V)), weighted_literal_tuple(B
 % constraints, facts, open atoms, easy atoms, normal rules, weight rules, choice rules and neg atoms
 %
  constraint(B) :- rule(disjunction(H),normal(B)), 0 = { atom_tuple(H,A) }.
-       fact(A) :- rule(disjunction(H),normal(B)), atom_tuple(H,A), 0 = { literal_tuple(B,L) }.
-       open(A) :- rule(     choice(H),normal(B)), atom_tuple(H,A), 0 = { literal_tuple(B,L) }, not fact(A).
+       fact(A) :- rule(disjunction(H),normal(B)), atom_tuple(H,A), size(B,0).
+       open(A) :- rule(     choice(H),normal(B)), atom_tuple(H,A), size(B,0), not fact(A).
        easy(A) :- fact(A).
        easy(A) :- open(A).
    normal(A,B) :- rule(disjunction(H),normal(B)), atom_tuple(H,A), not easy(A),          not constraint(B).
@@ -53,15 +63,15 @@ neg(A):- tr(1,A,A), not easy(A).
 
 
 %
-% _literal_tuple(B,S,A,P) and _weighted_literal_tuple(B,S,A,X,P)
+% nliteral_tuple(B,S,A,P) and nweighted_literal_tuple(B,S,A,X,P)
 %
-_literal_tuple(B,S,A,P) :- literal_tuple(B,S,A,P), S != 1.
-_literal_tuple(B,S,A,P) :- literal_tuple(B,S,A,P), S  = 1, not neg(A).
-_literal_tuple(B,2,A,P) :- literal_tuple(B,S,A,P), S  = 1,     neg(A).
+nliteral_tuple(B,S,A,P) :- literal_tuple(B,S,A,P), S != 1.
+nliteral_tuple(B,S,A,P) :- literal_tuple(B,S,A,P), S  = 1, not neg(A).
+nliteral_tuple(B,2,A,P) :- literal_tuple(B,S,A,P), S  = 1,     neg(A).
 %
-_weighted_literal_tuple(B,S,A,X,P) :- weighted_literal_tuple(B,S,A,X,P), S != 1.
-_weighted_literal_tuple(B,S,A,X,P) :- weighted_literal_tuple(B,S,A,X,P), S  = 1, not neg(A).
-_weighted_literal_tuple(B,2,A,X,P) :- weighted_literal_tuple(B,S,A,X,P), S  = 1,     neg(A).
+nweighted_literal_tuple(B,S,A,X,P) :- weighted_literal_tuple(B,S,A,X,P), S != 1.
+nweighted_literal_tuple(B,S,A,X,P) :- weighted_literal_tuple(B,S,A,X,P), S  = 1, not neg(A).
+nweighted_literal_tuple(B,2,A,X,P) :- weighted_literal_tuple(B,S,A,X,P), S  = 1,     neg(A).
 
 
 %
@@ -86,16 +96,17 @@ prob(not_hold(A)) :- neg(A).
 %
 % constraint
 %
-bot     :- constraint(B), 1 = { literal_tuple(B,L) },
+bot     :- constraint(B), size(B,0).
+bot     :- constraint(B), size(B,1),
            literal_tuple(B,S1,A1,1), true(S1,A1).
-bot     :- constraint(B), 2 = { literal_tuple(B,L) },
+bot     :- constraint(B), size(B,2),
            literal_tuple(B,S1,A1,1), true(S1,A1),
            literal_tuple(B,S2,A2,2), true(S2,A2).
-bot     :- constraint(B), 3 = { literal_tuple(B,L) },
+bot     :- constraint(B), size(B,3),
            literal_tuple(B,S1,A1,1), true(S1,A1),
            literal_tuple(B,S2,A2,2), true(S2,A2),
            literal_tuple(B,S3,A3,3), true(S3,A3).
-bot     :- constraint(B), 4 = { literal_tuple(B,L) },
+bot     :- constraint(B), size(B,4),
            literal_tuple(B,S1,A1,1), true(S1,A1),
            literal_tuple(B,S2,A2,2), true(S2,A2),
            literal_tuple(B,S3,A3,3), true(S3,A3),
@@ -110,7 +121,7 @@ bot     :- constraint(B), 4 = { literal_tuple(B,L) },
     weight(B,W) :- oweight(A,B,V), W = #max{ WW : weight(AA,B,WW); WW : oweight(AA,B,WW) }.
 cont(B,P+1,  0) :-   weight(B,W), P = { weighted_literal_tuple(B,L,V) }.
 cont(B,P-1,  V) :-   weight(B,W), cont(B,P,V), P>1.
-cont(B,P-1,X+V) :-   weight(B,W), cont(B,P,V), P>1, _weighted_literal_tuple(B,S,A,X,P-1), true(S,A), V<W.
+cont(B,P-1,X+V) :-   weight(B,W), cont(B,P,V), P>1, nweighted_literal_tuple(B,S,A,X,P-1), true(S,A), V<W.
 %
 hold(A) :-  weight(A,B,W), cont(B,1,V), V >= W.
     bot :- oweight(A,B,W), cont(B,1,V), V >= W, true(1,A).
@@ -119,36 +130,36 @@ hold(A) :-  weight(A,B,W), cont(B,1,V), V >= W.
 %
 % normal
 %
-hold(A) :- normal(A,B), 1 = { literal_tuple(B,L) },
-           _literal_tuple(B,S1,A1,1), true(S1,A1).
-hold(A) :- normal(A,B), 2 = { literal_tuple(B,L) },
-           _literal_tuple(B,S1,A1,1), true(S1,A1),
-           _literal_tuple(B,S2,A2,2), true(S2,A2).
-hold(A) :- normal(A,B), 3 = { literal_tuple(B,L) },
-           _literal_tuple(B,S1,A1,1), true(S1,A1),
-           _literal_tuple(B,S2,A2,2), true(S2,A2),
-           _literal_tuple(B,S3,A3,3), true(S3,A3).
-hold(A) :- normal(A,B), 4 = { literal_tuple(B,L) },
-           _literal_tuple(B,S1,A1,1), true(S1,A1),
-           _literal_tuple(B,S2,A2,2), true(S2,A2),
-           _literal_tuple(B,S3,A3,3), true(S3,A3),
-           _literal_tuple(B,S4,A4,4), true(S4,A4).
+hold(A) :- normal(A,B), size(B,1),
+           nliteral_tuple(B,S1,A1,1), true(S1,A1).
+hold(A) :- normal(A,B), size(B,2),
+           nliteral_tuple(B,S1,A1,1), true(S1,A1),
+           nliteral_tuple(B,S2,A2,2), true(S2,A2).
+hold(A) :- normal(A,B), size(B,3),
+           nliteral_tuple(B,S1,A1,1), true(S1,A1),
+           nliteral_tuple(B,S2,A2,2), true(S2,A2),
+           nliteral_tuple(B,S3,A3,3), true(S3,A3).
+hold(A) :- normal(A,B), size(B,4),
+           nliteral_tuple(B,S1,A1,1), true(S1,A1),
+           nliteral_tuple(B,S2,A2,2), true(S2,A2),
+           nliteral_tuple(B,S3,A3,3), true(S3,A3),
+           nliteral_tuple(B,S4,A4,4), true(S4,A4).
 % ... 5 =  { ... }
 
 
 %
 % onormal
 %
-bot :- onormal(A,B), 1 = { literal_tuple(B,L) },
+bot :- onormal(A,B), size(B,1),
        literal_tuple(B,S1,A1,1), true(S1,A1), true(1,A).
-bot :- onormal(A,B), 2 = { literal_tuple(B,L) },
+bot :- onormal(A,B), size(B,2),
        literal_tuple(B,S1,A1,1), true(S1,A1),
        literal_tuple(B,S2,A2,2), true(S2,A2), true(1,A).
-bot :- onormal(A,B), 3 = { literal_tuple(B,L) },
+bot :- onormal(A,B), size(B,3),
        literal_tuple(B,S1,A1,1), true(S1,A1),
        literal_tuple(B,S2,A2,2), true(S2,A2),
        literal_tuple(B,S3,A3,3), true(S3,A3), true(1,A).
-bot :- onormal(A,B), 4 = { literal_tuple(B,L) },
+bot :- onormal(A,B), size(B,4),
        literal_tuple(B,S1,A1,1), true(S1,A1),
        literal_tuple(B,S2,A2,2), true(S2,A2),
        literal_tuple(B,S3,A3,3), true(S3,A3),
@@ -166,20 +177,20 @@ hold(|L|) :- fact(|L|), weighted_literal_tuple(B,L,W).
 %
 % choice(A,B)
 %
-hold(A) :- choice(A,B), 1 = { literal_tuple(B,L) },
-           _literal_tuple(B,S1,A1,1), true(S1,A1), true(3,A).
-hold(A) :- choice(A,B), 2 = { literal_tuple(B,L) },
-           _literal_tuple(B,S1,A1,1), true(S1,A1),
-           _literal_tuple(B,S2,A2,2), true(S2,A2), true(3,A).
-hold(A) :- choice(A,B), 3 = { literal_tuple(B,L) },
-           _literal_tuple(B,S1,A1,1), true(S1,A1),
-           _literal_tuple(B,S2,A2,2), true(S2,A2),
-           _literal_tuple(B,S3,A3,3), true(S3,A3), true(3,A).
-hold(A) :- choice(A,B), 4 = { literal_tuple(B,L) },
-           _literal_tuple(B,S1,A1,1), true(S1,A1),
-           _literal_tuple(B,S2,A2,2), true(S2,A2),
-           _literal_tuple(B,S3,A3,3), true(S3,A3),
-           _literal_tuple(B,S4,A4,4), true(S4,A4), true(3,A).
+hold(A) :- choice(A,B), size(B,1),
+           nliteral_tuple(B,S1,A1,1), true(S1,A1), true(3,A).
+hold(A) :- choice(A,B), size(B,2),
+           nliteral_tuple(B,S1,A1,1), true(S1,A1),
+           nliteral_tuple(B,S2,A2,2), true(S2,A2), true(3,A).
+hold(A) :- choice(A,B), size(B,3),
+           nliteral_tuple(B,S1,A1,1), true(S1,A1),
+           nliteral_tuple(B,S2,A2,2), true(S2,A2),
+           nliteral_tuple(B,S3,A3,3), true(S3,A3), true(3,A).
+hold(A) :- choice(A,B), size(B,4),
+           nliteral_tuple(B,S1,A1,1), true(S1,A1),
+           nliteral_tuple(B,S2,A2,2), true(S2,A2),
+           nliteral_tuple(B,S3,A3,3), true(S3,A3),
+           nliteral_tuple(B,S4,A4,4), true(S4,A4), true(3,A).
 % ... 5 =  { ... }
 
 
@@ -187,33 +198,35 @@ hold(A) :- choice(A,B), 4 = { literal_tuple(B,L) },
 % open(A)
 %
     {hold(A)} :- open(A).
-    block(A)  :- prob(S,hold(A),W).
+    block(A)  :- prob(hold(A),W).
 prob(hold(A)) :- open(A), not block(A).
 
 
 %
-% minimize 
-% * TODO: what if a literal appears twice? can that happen?
+% minimize
 %
-prob(0, hold( L),W) :- minimize(0,B), weighted_literal_tuple(B,L,W), L >= 0,     open( L).
-prob(1, hold(-L),W) :- minimize(0,B), weighted_literal_tuple(B,L,W), L <  0,     open(-L).
-prob(0,whold( L),W) :- minimize(0,B), weighted_literal_tuple(B,L,W), L >= 0, not open( L).
-prob(1,whold(-L),W) :- minimize(0,B), weighted_literal_tuple(B,L,W), L <  0, not open(-L).
+min(A,W) :- minimize(0,B), weighted_literal_tuple(B,L,WW), A = |L|,
+            W = #sum{  W1,0 : weighted_literal_tuple(B, A,W1);
+                      -W2,1 : weighted_literal_tuple(B,-A,W2)}.
+%
+prob( hold(A),W) :- min(A,W),     open(A).
+prob(whold(A),W) :- min(A,W), not open(A).
 
 
 %
 % show
 %
-show(T) :- output(T,B), 1 = { literal_tuple(B,L) },
+show(T) :- output(T,B), size(B,0).
+show(T) :- output(T,B), size(B,1),
            literal_tuple(B,S1,A1,1), true(S1,A1).
-show(T) :- output(T,B), 2 = { literal_tuple(B,L) },
+show(T) :- output(T,B), size(B,2),
            literal_tuple(B,S1,A1,1), true(S1,A1),
            literal_tuple(B,S2,A2,2), true(S2,A2).
-show(T) :- output(T,B), 3 = { literal_tuple(B,L) },
+show(T) :- output(T,B), size(B,3),
            literal_tuple(B,S1,A1,1), true(S1,A1),
            literal_tuple(B,S2,A2,2), true(S2,A2),
            literal_tuple(B,S3,A3,3), true(S3,A3).
-show(T) :- output(T,B), 4 = { literal_tuple(B,L) },
+show(T) :- output(T,B), size(B,4),
            literal_tuple(B,S1,A1,1), true(S1,A1),
            literal_tuple(B,S2,A2,2), true(S2,A2),
            literal_tuple(B,S3,A3,3), true(S3,A3),
@@ -228,5 +241,6 @@ evidence(bot,false) :- neg(A).
 evidence(bot,false) :- constraint(B).
 evidence(bot,false) :- onormal(A,B).
 evidence(bot,false) :- oweight(A,B,W).
-evidence(bot,false) :- prob(S,A,W).
-query(show(T)) :- output(T,B).
+evidence(bot,false) :- prob(A,W).
+query(show(T)) :- show(query(T)).
+
