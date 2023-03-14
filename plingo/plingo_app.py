@@ -38,6 +38,7 @@ class PlingoApp(Application):
     two_solve_calls: Flag
     opt_enum: Flag
     use_backend: Flag
+    problog: Flag
     frontend: str
     query: List[Tuple[Symbol, List[int]]]
     evidence_file: str
@@ -53,6 +54,7 @@ class PlingoApp(Application):
         self.two_solve_calls = Flag(False)
         self.opt_enum = Flag(False)
         self.use_backend = Flag(False)
+        self.problog = Flag(False)
         self.frontend = 'plingo'
         self.query = []
         self.evidence_file = ''
@@ -153,6 +155,9 @@ class PlingoApp(Application):
             group, 'use-backend',
             'Adds constraints for query approximation in backend instead of using assumptions.',
             self.use_backend)
+        options.add_flag(group, 'problog',
+                         'Translate input to ProbLog program and print.',
+                         self.problog)
 
     def validate_options(self) -> bool:
         if self.two_solve_calls and self.frontend != 'lpmln':
@@ -282,10 +287,40 @@ class PlingoApp(Application):
         '''
         Parse clingo program with weights and convert to ASP with weak constraints.
         '''
-        obs = self._preprocessing(ctl, files)
-        ctl.ground([("base", [])])
-        self.query = collect_query(ctl.theory_atoms, self.balanced_models)
-        model_costs = self._solve(ctl, obs)
+        if self.problog:
+            import subprocess
+            pre = subprocess.Popen(["clingo", f"{''.join(files)}", "--pre"],
+                                   stdout=subprocess.PIPE)
+            reify = subprocess.Popen(["clingo", "-", "--output=reify"],
+                                     stdin=pre.stdout,
+                                     stdout=subprocess.PIPE)
+            pre.stdout.close()
+            ground_problog = subprocess.Popen([
+                "clingo", "-", "plingo/meta-problog/ground-meta-problog.lp",
+                "--text"
+            ],
+                                              stdin=reify.stdout,
+                                              stdout=subprocess.PIPE)
+            reify.stdout.close()
 
-        if model_costs != []:
-            self._probabilities(model_costs, obs.priorities)
+            output = ground_problog.communicate()[0].decode('utf-8').split(
+                '\n')
+
+            filter = '\n'.join(line for line in output
+                               if line.startswith(('evidence', 'query', 'show',
+                                                   'prob', 'bot', 'hold',
+                                                   'cont')))
+            replace = filter.replace('true(0,', 'hold(')
+            replace2 = replace.replace('true(1,', 'not hold(')
+            replace3 = replace2.replace('true(2,', 'not_hold(')
+            replace4 = replace3.replace('true(3,', 'not not_hold(')
+            print(replace4)
+
+        else:
+            obs = self._preprocessing(ctl, files)
+            ctl.ground([("base", [])])
+            self.query = collect_query(ctl.theory_atoms, self.balanced_models)
+            model_costs = self._solve(ctl, obs)
+
+            if model_costs != []:
+                self._probabilities(model_costs, obs.priorities)
