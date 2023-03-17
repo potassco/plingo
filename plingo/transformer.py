@@ -156,7 +156,7 @@ class PlingoTransformer(Transformer):
             asp_rules.append(weak_constraint)
             return asp_rules
 
-    def visit_Rule(self, rule: AST, builder: ProgramBuilder):
+    def visit_Rule(self, rule: AST, **kwargs):  #*builder: ProgramBuilder):
         """
         Visits an LP^MLN rule, converts it to three ASP rules
         if necessary and adds the result to the program builder.
@@ -201,9 +201,16 @@ class PlingoTransformer(Transformer):
             asp_rules = self._convert_rule(head, body)
             self.rule_idx += 1
 
+        builder = kwargs.get('builder', None)
+        file = kwargs.get('file', None)
+
         # We might obtain more than one rule,
         for r in asp_rules[:-1]:
-            builder.add(r)
+            if builder:
+                builder.add(r)
+            elif file:
+                with open(file, 'a') as lp:
+                    lp.write(f'{str(r)}\n')
 
         return asp_rules[-1]
 

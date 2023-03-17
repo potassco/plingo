@@ -1,4 +1,5 @@
 from typing import cast, Sequence, List, Tuple, Optional
+from subprocess import Popen, PIPE
 import sys
 
 from clingo.application import Application, ApplicationOptions, Flag
@@ -38,12 +39,13 @@ class PlingoApp(Application):
     two_solve_calls: Flag
     opt_enum: Flag
     use_backend: Flag
-    problog: Flag
     frontend: str
     query: List[Tuple[Symbol, List[int]]]
     evidence_file: str
     balanced_models: Optional[int]
     power_of_ten: int
+    temp: str
+    problog: str
 
     program_name: str = "plingo"
     version: str = "1.0.0"
@@ -54,12 +56,13 @@ class PlingoApp(Application):
         self.two_solve_calls = Flag(False)
         self.opt_enum = Flag(False)
         self.use_backend = Flag(False)
-        self.problog = Flag(False)
         self.frontend = 'plingo'
         self.query = []
         self.evidence_file = ''
         self.balanced_models = None
         self.power_of_ten = 5
+        self.temp = 'temp.lp'
+        self.problog = ''
 
     def _parse_frontend(self, value: str) -> bool:
         """
@@ -115,6 +118,12 @@ class PlingoApp(Application):
             )
             return False
 
+    def _parse_problog(self, value) -> bool:
+        with open(self.temp, 'w') as temp:
+            pass
+        self.problog = value
+        return True
+
     def register_options(self, options: ApplicationOptions) -> None:
         """
         Register application option.
@@ -155,9 +164,10 @@ class PlingoApp(Application):
             group, 'use-backend',
             'Adds constraints for query approximation in backend instead of using assumptions.',
             self.use_backend)
-        options.add_flag(group, 'problog',
-                         'Translate input to ProbLog program and print.',
-                         self.problog)
+        options.add(
+            group, 'problog',
+            '''Translate input to ProbLog program save in a file.
+                         Use as --problog=output.lp''', self._parse_problog)
 
     def validate_options(self) -> bool:
         if self.two_solve_calls and self.frontend != 'lpmln':
@@ -177,20 +187,58 @@ class PlingoApp(Application):
             return False
         return True
 
+    def _meta_problog(self):
+        pre = Popen(["clingo", f"{self.temp}", "--pre"], stdout=PIPE)
+        reify = Popen(["clingo", "-", "--output=reify"],
+                      stdin=pre.stdout,
+                      stdout=PIPE)
+        pre.stdout.close()
+        ground_problog = Popen([
+            "clingo", "-", "plingo/meta-problog/ground-meta-problog.lp",
+            "--text"
+        ],
+                               stdin=reify.stdout,
+                               stdout=PIPE)
+        reify.stdout.close()
+
+        output = ground_problog.communicate()[0].decode('utf-8').split('\n')
+
+        filter = '\n'.join(line for line in output
+                           if line.startswith(('evidence', 'query', 'show',
+                                               'prob', 'bot', 'hold', 'cont')))
+        replace = filter.replace('true(0,', 'hold(')
+        replace2 = replace.replace('true(1,', 'not hold(')
+        replace3 = replace2.replace('true(2,', 'not_hold(')
+        replace4 = replace3.replace('true(3,', 'not not_hold(')
+
+        with open(self.problog, 'w') as problog:
+            problog.write(replace4)
+
     def _read(self, path: str):
         if path == "-":
             return sys.stdin.read()
         with open(path) as file_:
             return file_.read()
 
+    def _save_translation(self, rule):
+        with open(self.temp, 'a') as lp:
+            lp.write(f'{str(rule)}\n')
+
     def _convert(self, ctl: Control, files: Sequence[str]):
         options = [
             self.frontend, self.use_unsat_approach, self.two_solve_calls,
             self.power_of_ten
         ]
-        with ProgramBuilder(ctl) as b:
-            pt = PlingoTransformer(options)
-            parse_files(files, lambda stm: b.add(cast(AST, pt.visit(stm, b))))
+        pt = PlingoTransformer(options)
+        if self.problog:
+            parse_files(
+                files, lambda stm: self._save_translation(
+                    pt.visit(stm, file=self.temp)))
+        else:
+            with ProgramBuilder(ctl) as b:
+                parse_files(
+                    files,
+                    lambda stm: b.add(cast(AST, pt.visit(stm, builder=b))))
 
     def _preprocessing(self, ctl: Control,
                        files: Sequence[str]) -> Tuple[Configuration, MinObs]:
@@ -287,37 +335,10 @@ class PlingoApp(Application):
         '''
         Parse clingo program with weights and convert to ASP with weak constraints.
         '''
+        obs = self._preprocessing(ctl, files)
         if self.problog:
-            import subprocess
-            pre = subprocess.Popen(["clingo", f"{''.join(files)}", "--pre"],
-                                   stdout=subprocess.PIPE)
-            reify = subprocess.Popen(["clingo", "-", "--output=reify"],
-                                     stdin=pre.stdout,
-                                     stdout=subprocess.PIPE)
-            pre.stdout.close()
-            ground_problog = subprocess.Popen([
-                "clingo", "-", "plingo/meta-problog/ground-meta-problog.lp",
-                "--text"
-            ],
-                                              stdin=reify.stdout,
-                                              stdout=subprocess.PIPE)
-            reify.stdout.close()
-
-            output = ground_problog.communicate()[0].decode('utf-8').split(
-                '\n')
-
-            filter = '\n'.join(line for line in output
-                               if line.startswith(('evidence', 'query', 'show',
-                                                   'prob', 'bot', 'hold',
-                                                   'cont')))
-            replace = filter.replace('true(0,', 'hold(')
-            replace2 = replace.replace('true(1,', 'not hold(')
-            replace3 = replace2.replace('true(2,', 'not_hold(')
-            replace4 = replace3.replace('true(3,', 'not not_hold(')
-            print(replace4)
-
+            self._meta_problog()
         else:
-            obs = self._preprocessing(ctl, files)
             ctl.ground([("base", [])])
             self.query = collect_query(ctl.theory_atoms, self.balanced_models)
             model_costs = self._solve(ctl, obs)
