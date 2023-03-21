@@ -1,3 +1,4 @@
+from os import remove
 from typing import cast, Sequence, List, Tuple, Optional
 from subprocess import Popen, PIPE
 import sys
@@ -120,7 +121,7 @@ class PlingoApp(Application):
 
     def _parse_problog(self, value) -> bool:
         with open(self.temp, 'w') as temp:
-            pass
+            temp.write('#show query/1.\n')
         self.problog = value
         return True
 
@@ -206,6 +207,7 @@ class PlingoApp(Application):
         filter = '\n'.join(line for line in output
                            if line.startswith(('evidence', 'query', 'show',
                                                'prob', 'bot', 'hold', 'cont')))
+
         replace = filter.replace('true(0,', 'hold(')
         replace2 = replace.replace('true(1,', 'not hold(')
         replace3 = replace2.replace('true(2,', 'not_hold(')
@@ -214,6 +216,8 @@ class PlingoApp(Application):
         with open(self.problog, 'w') as problog:
             problog.write(replace4)
 
+        remove(self.temp)
+
     def _read(self, path: str):
         if path == "-":
             return sys.stdin.read()
@@ -221,8 +225,10 @@ class PlingoApp(Application):
             return file_.read()
 
     def _save_translation(self, rule):
-        with open(self.temp, 'a') as lp:
-            lp.write(f'{str(rule)}\n')
+        rule = str(rule)
+        if rule != '#program base.':
+            with open(self.temp, 'a') as lp:
+                lp.write(f'{rule}\n')
 
     def _convert(self, ctl: Control, files: Sequence[str]):
         options = [

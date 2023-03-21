@@ -206,8 +206,8 @@ prob(hold(A)) :- open(A), not block(A).
 % minimize
 %
 min(A,W) :- minimize(0,B), weighted_literal_tuple(B,L,WW), A = |L|,
-            W = #sum{  W1,0 : weighted_literal_tuple(B, A,W1);
-                      -W2,1 : weighted_literal_tuple(B,-A,W2)}.
+            W = #sum{ -W1,0 : weighted_literal_tuple(B, A,W1);
+                       W2,1 : weighted_literal_tuple(B,-A,W2)}.
 %
 prob( hold(A),W) :- min(A,W),     open(A).
 prob(whold(A),W) :- min(A,W), not open(A).

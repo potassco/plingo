@@ -161,6 +161,9 @@ class PlingoTransformer(Transformer):
         Visits an LP^MLN rule, converts it to three ASP rules
         if necessary and adds the result to the program builder.
         """
+        builder = kwargs.get('builder', None)
+        file = kwargs.get('file', None)
+
         # Set weight to alpha by default
         head = rule.head
         body = rule.body
@@ -179,6 +182,9 @@ class PlingoTransformer(Transformer):
 
         # Query theory atoms are grounded and then processed
         if self.theory_type == 'query':
+            if file:
+                rule = str(rule)
+                rule = rule[1:rule.rfind(')') + 1] + '.'
             return rule
 
         # Evidence theory atoms are converted to integrity constraints
@@ -200,9 +206,6 @@ class PlingoTransformer(Transformer):
         else:
             asp_rules = self._convert_rule(head, body)
             self.rule_idx += 1
-
-        builder = kwargs.get('builder', None)
-        file = kwargs.get('file', None)
 
         # We might obtain more than one rule,
         for r in asp_rules[:-1]:
