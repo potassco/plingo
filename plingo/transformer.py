@@ -183,9 +183,14 @@ class PlingoTransformer(Transformer):
         # Query theory atoms are grounded and then processed
         if self.theory_type == 'query':
             if file:
+                query_arg = rule.head.term.arguments[0]
+                if str(query_arg.ast_type) == 'ASTType.SymbolicTerm':
+                    show_atom = f'#show {query_arg}/0.'
+                else:
+                    show_atom = f'#show {query_arg.name}/{len(query_arg.arguments)}.'
                 rule = str(rule)
                 rule = rule[1:rule.rfind(')') + 1] + '.'
-            return rule
+            return f'{rule}\n{show_atom}'
 
         # Evidence theory atoms are converted to integrity constraints
         elif self.theory_type == 'evidence':

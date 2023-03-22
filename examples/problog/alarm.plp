@@ -9,8 +9,6 @@ calls(X) :- alarm, hears_alarm(X).
 person(mary).
 person(john).
 
-#show burglary/0.
-
 &evidence(alarm,true).
 % &query(hears_alarm(P)) :-  hears_alarm(P).
 &query(burglary).
