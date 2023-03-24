@@ -171,7 +171,7 @@ For approximation of probabilistic queries it is recommended to use the `--opt-e
 
     Adds constraints for query approximation in backend instead of using assumptions.
 
-## Using ProbLog as a solver
+### Using ProbLog as a solver
 With the `--problog` option it is possible to translate a plingo program to a problog program
 which can be solved by the ProbLog system (https://github.com/ML-KULeuven/problog).
 This can also be combined with using any of the frontends.
