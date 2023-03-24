@@ -190,7 +190,8 @@ class PlingoTransformer(Transformer):
                     show_atom = f'#show {query_arg.name}/{len(query_arg.arguments)}.'
                 rule = str(rule)
                 rule = rule[1:rule.rfind(')') + 1] + '.'
-            return f'{rule}\n{show_atom}'
+                rule = f'{rule}\n{show_atom}'
+            return rule
 
         # Evidence theory atoms are converted to integrity constraints
         elif self.theory_type == 'evidence':

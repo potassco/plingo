@@ -1,6 +1,4 @@
-from os import remove
 from typing import cast, Sequence, List, Tuple, Optional
-from subprocess import Popen, PIPE
 import sys
 
 from clingo.application import Application, ApplicationOptions, Flag
@@ -10,6 +8,7 @@ from clingo.control import Control
 from clingo.script import enable_python
 from clingo.symbol import Function, Symbol
 
+from .meta_problog import create_reified_problog
 from .transformer import PlingoTransformer
 from .query import collect_query, check_model_for_query
 from .opt import MinObs, OptEnum
@@ -188,36 +187,6 @@ class PlingoApp(Application):
             return False
         return True
 
-    def _meta_problog(self):
-        pre = Popen(["clingo", f"{self.temp}", "--pre"], stdout=PIPE)
-        reify = Popen(["clingo", "-", "--output=reify"],
-                      stdin=pre.stdout,
-                      stdout=PIPE)
-        pre.stdout.close()
-        ground_problog = Popen([
-            "clingo", "-", "plingo/meta-problog/ground-meta-problog.lp",
-            "--text"
-        ],
-                               stdin=reify.stdout,
-                               stdout=PIPE)
-        reify.stdout.close()
-
-        output = ground_problog.communicate()[0].decode('utf-8').split('\n')
-
-        filter = '\n'.join(line for line in output
-                           if line.startswith(('evidence', 'query', 'show',
-                                               'prob', 'bot', 'hold', 'cont')))
-
-        replace = filter.replace('true(0,', 'hold(')
-        replace2 = replace.replace('true(1,', 'not hold(')
-        replace3 = replace2.replace('true(2,', 'not_hold(')
-        replace4 = replace3.replace('true(3,', 'not not_hold(')
-
-        with open(self.problog, 'w') as problog:
-            problog.write(replace4)
-
-        remove(self.temp)
-
     def _read(self, path: str):
         if path == "-":
             return sys.stdin.read()
@@ -343,7 +312,7 @@ class PlingoApp(Application):
         '''
         obs = self._preprocessing(ctl, files)
         if self.problog:
-            self._meta_problog()
+            create_reified_problog(self.temp, self.problog)
         else:
             ctl.ground([("base", [])])
             self.query = collect_query(ctl.theory_atoms, self.balanced_models)
