@@ -175,7 +175,7 @@ For approximation of probabilistic queries it is recommended to use the `--opt-e
 With the `--problog` option it is possible to translate a plingo program to a problog program
 which can be solved by the ProbLog system (https://github.com/ML-KULeuven/problog).
 This can also be combined with using any of the frontends.
-
+The input file needs to contain at least one query.
 ```
 plingo examples/lpmln/birds.plp examples/lpmln/birds_query.plp --frontend=lpmln-alt --problog=problog.lp >/dev/null; problog problog.lp
 ```
