@@ -1,17 +1,39 @@
-%
-% Usage:
-%   clingo <files> --pre | clingo - --output=reify | clingo - ground-meta-problog.lp --text | \
-%   sed -n '/^\(evidence\|query\|show\|prob\|bot\|hold\|cont\)/ p' | sed -e 's:true(0,:hold(:g' -e 's:true(1,:not hold(:g' -e 's:true(2,:not_hold(:g' -e 's:true(3,:not not_hold(:g' | \
-%   problog --combine - probs-meta-problog.lp
-% where <files> is a plingo program (accepted by clingo)
-% with optimize statements at level 0 and only at that level
-% where the weights have been multiplied by a factor of 100000.
-% This factor can be changed in the probabilistic facts of probs-meta-problog.lp.
-%
-% Queries should be specified by atoms of predicate query/1.
-% Predicate query/1 and the predicates of the atoms that are queried
-% must be #shown in <files>.
-%
+from os import remove
+from subprocess import Popen, PIPE
+
+
+def create_reified_problog(tempfile, outfile):
+    pre = Popen(["clingo", f"{tempfile}", "--pre"], stdout=PIPE)
+    reify = Popen(["clingo", "-", "--output=reify"],
+                  stdin=pre.stdout,
+                  stdout=PIPE)
+    pre.stdout.close()
+    reify_output = reify.communicate()[0].decode('utf-8')
+    reify.stdout.close()
+
+    input_for_grounding = reify_output + '\n' + ground_meta_problog
+    ground_problog = Popen(["clingo", "-", "--text"], stdin=PIPE, stdout=PIPE)
+    output = ground_problog.communicate(input=input_for_grounding.encode(
+        'utf-8'))[0].decode('utf-8').split('\n')
+
+    filter = '\n'.join(line for line in output
+                       if line.startswith(('evidence', 'query', 'show', 'prob',
+                                           'bot', 'hold', 'cont')))
+
+    replace = filter.replace('true(0,', 'hold(')
+    replace2 = replace.replace('true(1,', 'not hold(')
+    replace3 = replace2.replace('true(2,', 'not_hold(')
+    replace4 = replace3.replace('true(3,', 'not not_hold(')
+
+    final_output = '%%%% Reified Encoding\n' + replace4 + '\n\n' + probs_meta
+
+    with open(outfile, 'w') as problog:
+        problog.write(final_output)
+
+    remove(tempfile)
+
+
+ground_meta_problog = '''
 % We allow at most 4 elements per body, it is easy to extend the encoding for longer lengths
 :- literal_tuple(B,L), 5 { literal_tuple(B,LL) }.
 %
@@ -243,4 +265,18 @@ evidence(bot,false) :- onormal(A,B).
 evidence(bot,false) :- oweight(A,B,W).
 evidence(bot,false) :- prob(A,W).
 query(show(T)) :- show(query(T)).
+'''
 
+probs_meta = '''
+%%%% Probability part
+prob(0). prob(0,0). % to avoid warnings
+
+0.5 ::     hold(A) :- prob(    hold(A)).
+0.5 :: not_hold(A) :- prob(not_hold(A)).
+
+E/(E+1)  :: hold(A) :- prob(hold(A),W), E=2.71828182**(W/100000).
+
+E/(E+1) :: whold(A) :- prob(whold(A),W), E=2.71828182**(W/100000).
+bot :- prob(whold(A),W),     whold(A), not hold(A).
+bot :- prob(whold(A),W), not whold(A),     hold(A).
+'''

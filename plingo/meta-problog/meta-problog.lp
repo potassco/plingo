@@ -1,14 +1,8 @@
-% 
-% Usage:
-%     clingo <files> --output=reify | problog --combine - meta-problog.lp
-% where <files> is a plingo program (accepted by clingo)
-% with optimize statements at level 0 and only at that level
-% where the weights have been multiplied by a factor of 100000.
-% This factor can be changed in the probabilistic fact for hold_weight/3.
 %
-% Queries should be specified by atoms of predicate query/1.
-% Predicate query/1 and the predicates of the atoms that are queried 
-% must be #shown in <files>.
+% Usage:
+%   clingo <files> --output=reify | problog --combine - meta-problog.lp
+% where <files> is a plingo program with optimize statements
+% at level 0 and only at that level
 %
 
 :- use_module(library(aggregate)).
@@ -115,8 +109,8 @@ hold(A) :- weight(A,B,V), cont(B,1,V).
     bot :- constraint(B), conjunction(B).
 
 % show
-query(show(T)) :- output(query(T),B), conjunction(B).
-      show(T)  :- query(show(T)), output(T,B), conjunction(B).
+query(prob(T)) :- output(query(T),B), conjunction(B).
+      prob(T)  :- query(prob(T)), output(T,B), conjunction(B).
 
 % bot is false
 evidence(bot,false).
