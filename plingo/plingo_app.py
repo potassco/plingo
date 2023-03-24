@@ -167,8 +167,8 @@ class PlingoApp(Application):
             self.use_backend)
         options.add(
             group, 'problog',
-            '''Translate input to ProbLog program save in a file.
-                         Use as --problog=output.lp''', self._parse_problog)
+            '''Translate input to ProbLog program and save in a file.
+                            Use as --problog=output.lp''', self._parse_problog)
 
     def validate_options(self) -> bool:
         if self.two_solve_calls and self.frontend != 'lpmln':
