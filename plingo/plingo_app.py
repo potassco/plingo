@@ -1,6 +1,7 @@
-from typing import cast, Sequence, List, Tuple, Optional
+import os
 import sys
 import tempfile
+from typing import cast, Sequence, List, Tuple, Optional
 
 from clingo.application import Application, ApplicationOptions, Flag
 from clingo.ast import AST, ProgramBuilder, parse_files, parse_string
@@ -62,7 +63,7 @@ class PlingoApp(Application):
         self.evidence_file = ''
         self.balanced_models = None
         self.power_of_ten = 5
-        self.temp = tempfile._get_default_tempdir()+'/temp.lp'
+        self.temp = os.path.join(tempfile.mkdtemp(), 'temp.lp')
         self.problog = ''
 
     def _parse_frontend(self, value: str) -> bool:
