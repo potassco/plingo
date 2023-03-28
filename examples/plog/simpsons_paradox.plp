@@ -19,7 +19,10 @@ boolean(t;f).
 % Observations and actions
 #const do_drug = t.
 &do{ drug(do_drug) }.
+&obs{ male(t) }.
 
 #show male/1.
 #show recover/1.
 #show drug/1.
+
+&query(recover(t)).
