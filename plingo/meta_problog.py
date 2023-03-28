@@ -1,4 +1,5 @@
-from os import remove
+from os.path import dirname
+from shutil import rmtree
 from subprocess import Popen, PIPE
 
 
@@ -30,7 +31,7 @@ def create_reified_problog(tempfile, outfile):
     with open(outfile, 'w') as problog:
         problog.write(final_output)
 
-    remove(tempfile)
+    rmtree(dirname(tempfile))
 
 
 ground_meta_problog = '''
