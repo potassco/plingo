@@ -19,7 +19,7 @@ A number of **examples** can be found [here](https://github.com/potassco/plingo/
 
 ## Installation
 
-#### With coda 
+#### With conda
 
 ```
 conda install -c potassco plingo
@@ -31,7 +31,7 @@ conda install -c potassco plingo
 pip install plingo
 ```
 
-#### From source 
+#### From source
 
 ```
 git clone https://github.com/potassco/plingo.git
@@ -64,7 +64,7 @@ plingo -h
 - `--frontend=mode`
 
     Specifies which frontend to use (`lpmln`, `lpmln-alt`, `problog`, `plog`).
-    Mode `lpmln-alt` is the alternative definition where hard rules have to be satisfied. 
+    Mode `lpmln-alt` is the alternative definition where hard rules have to be satisfied.
     When using mode `lpmln` hard rules are also translated which can be useful for debugging or resolving inconsistencies in the program.
 
 - `--query='atom'`
@@ -79,7 +79,7 @@ plingo -h
 
     Uses the conversion with `unsat` atoms
 
-#### Examples 
+#### Examples
 ##### MAP estimate
 
 Find a most probable stable model
@@ -110,7 +110,7 @@ CPU Time     : 0.005s
 
 ##### Marginal probabilities
 
-To list all stable models, add the flag `--all`. 
+To list all stable models, add the flag `--all`.
 
 ```
 plingo examples/lpmln/birds.plp --all --frontend lpmln-alt
@@ -145,7 +145,7 @@ CPU Time     : 0.006s
 ```
 
 #### Approximation algorithm
-For large problems it is infeasible to determine all stable models. 
+For large problems it is infeasible to determine all stable models.
 Plingo offers an option to determine approximate probabilities using
 answer set enumeration by optimality (ASEO) [[1]](#1).
 
@@ -153,10 +153,10 @@ For approximation of probabilistic queries it is recommended to use the `--opt-e
 
 - `--opt-enum`
 
-    Enumerates stable models by optimality. 
+    Enumerates stable models by optimality.
     This can be used for approximating probabilities and queries.
     Recommended to use along with -q1 to suppress printing of intermediate models
-    
+
 - `--balanced=N`
 
     Approximates a query in a balanced way, i.e. it will determine N stable models containing the query, and N stable models *not* containing the query. This overwrites clingo's `--models` option. Works only for a single ground query atom!
@@ -166,7 +166,7 @@ For approximation of probabilistic queries it is recommended to use the `--opt-e
 
 
 ## Input Language
-Syntactically, LPMLN differs between "soft" rules and "hard" rules, where "soft" rules have a (real number) weight and "hard" rules the weight "alpha". 
+Syntactically, LPMLN differs between "soft" rules and "hard" rules, where "soft" rules have a (real number) weight and "hard" rules the weight "alpha".
 
 Weights can be added by the theory atom `&weight/1` to the body of a rule. The argument has to be an integer or a string containing a float or an expression like `2/3`. For example
 ```

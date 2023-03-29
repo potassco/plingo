@@ -233,7 +233,7 @@ class PlingoApp(Application):
             if self.problog:
                 with open(self.temp, 'a') as lp:
                     lp.write(f'{get_meta_encoding()}\n')
-                    lp.write(f'#const _plingo_factor={self.power_of_ten}.')
+                    lp.write(f'#const _plingo_factor={self.power_of_ten}.\n')
         if self.two_solve_calls:
             ctl.add("base", [], '#external _plingo_ext_helper.')
         # TODO: Make sure the _ext_helper atom is not contained in the program.
