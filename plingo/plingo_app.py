@@ -1,5 +1,7 @@
-from typing import cast, Sequence, List, Tuple, Optional
+from os.path import join
 import sys
+from tempfile import mkdtemp
+from typing import cast, Sequence, List, Tuple, Optional
 
 from clingo.application import Application, ApplicationOptions, Flag
 from clingo.ast import AST, ProgramBuilder, parse_files, parse_string
@@ -61,7 +63,7 @@ class PlingoApp(Application):
         self.evidence_file = ''
         self.balanced_models = None
         self.power_of_ten = 5
-        self.temp = 'temp.lp'
+        self.temp = join(mkdtemp(), 'temp.lp')
         self.problog = ''
 
     def _parse_frontend(self, value: str) -> bool:
@@ -228,6 +230,10 @@ class PlingoApp(Application):
             enable_python()
             ctl.add("base", [], get_meta_encoding())
             ctl.add("base", [], f'#const _plingo_factor={self.power_of_ten}.')
+            if self.problog:
+                with open(self.temp, 'a') as lp:
+                    lp.write(f'{get_meta_encoding()}\n')
+                    lp.write(f'#const _plingo_factor={self.power_of_ten}.\n')
         if self.two_solve_calls:
             ctl.add("base", [], '#external _plingo_ext_helper.')
         # TODO: Make sure the _ext_helper atom is not contained in the program.

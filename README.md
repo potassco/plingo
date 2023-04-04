@@ -69,7 +69,7 @@ plingo -h
 
 - `--problog=output'`
 
-    Uses reificiation to translate a plingo program to a program which be can be given as input to the ProbLog system
+    Uses reificiation to translate a plingo program to a program which be can be given as input to the ProbLog system.
     The ProbLog program is saved under the path given in `output`.
     The input can also be given in any of the frontends (`lpmln`, `lpmln-alt`, `problog`, `plog`).
 
@@ -87,7 +87,9 @@ plingo -h
     Uses the conversion with `unsat` atoms
 
 #### Examples
+
 ##### MPE
+
 
 Find a most probable stable model
 
@@ -175,7 +177,7 @@ For approximation of probabilistic queries it is recommended to use the `--opt-e
 With the `--problog` option it is possible to translate a plingo program to a problog program
 which can be solved by the ProbLog system (https://github.com/ML-KULeuven/problog).
 This can also be combined with using any of the frontends.
-The input file needs to contain at least one query.
+The input file needs to contain at least one query when using marginal inference.
 ```
 plingo examples/lpmln/birds.plp examples/lpmln/birds_query.plp --frontend=lpmln-alt --problog=problog.lp >/dev/null; problog problog.lp
 ```

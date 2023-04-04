@@ -244,3 +244,12 @@ evidence(bot,false) :- oweight(A,B,W).
 evidence(bot,false) :- prob(A,W).
 query(show(T)) :- show(query(T)).
 
+%
+% defined predicates
+%
+#defined literal_tuple/1.
+#defined literal_tuple/2.
+#defined rule/2.
+#defined atom_tuple/2.
+#defined weighted_literal_tuple/3.
+#defined scc/2.
