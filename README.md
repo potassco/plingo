@@ -12,14 +12,14 @@ While the basic **syntax** of *plingo* is the same as the one of *clingo*, its *
 Solving exploits the relation between most probable stable models and optimal stable models [[4]](#4); it relies on *clingo*'s optimization and enumeration modes, as well as an **approximation method** based on answer set enumeration in the order of optimality [[5]](#5).
 
 The *plingo* system can be used to solve two **reasoning tasks**:
-- MAP inference: find a most probable stable model
+- MPE inference: find a most probable explanation (stable model)
 - Marginal inference: find all stable models and their probabilities
 
 A number of **examples** can be found [here](https://github.com/potassco/plingo/tree/main/examples). There are also sub-directories containing examples using our front-ends for the other probabilistic logic languages.
 
 ## Installation
 
-#### With conda
+#### With coda
 
 ```
 conda install -c potassco plingo
@@ -67,6 +67,13 @@ plingo -h
     Mode `lpmln-alt` is the alternative definition where hard rules have to be satisfied.
     When using mode `lpmln` hard rules are also translated which can be useful for debugging or resolving inconsistencies in the program.
 
+- `--problog=output'`
+
+    Uses reificiation to translate a plingo program to a program which be can be given as input to the ProbLog system.
+    The ProbLog program is saved under the path given in `output`.
+    The input can also be given in any of the frontends (`lpmln`, `lpmln-alt`, `problog`, `plog`).
+
+
 - `--query='atom'`
 
     Adds a query atom `atom`, e.g. using the example from above `--query='bird(jo)'`. The argument has to be inside single quotation marks (otherwise the command-line might not be able to parse it correctly).
@@ -80,7 +87,9 @@ plingo -h
     Uses the conversion with `unsat` atoms
 
 #### Examples
-##### MAP estimate
+
+##### MPE
+
 
 Find a most probable stable model
 
@@ -164,6 +173,18 @@ For approximation of probabilistic queries it is recommended to use the `--opt-e
 
     Adds constraints for query approximation in backend instead of using assumptions.
 
+#### Using ProbLog as a solver
+With the `--problog` option it is possible to translate a plingo program to a problog program
+which can be solved by the ProbLog system (https://github.com/ML-KULeuven/problog).
+This can also be combined with using any of the frontends.
+The input file needs to contain at least one query when using marginal inference.
+```
+plingo examples/lpmln/birds.plp examples/lpmln/birds_query.plp --frontend=lpmln-alt --problog=problog.lp >/dev/null; problog problog.lp
+```
+```
+show(residentBird(jo)): 0.66524095
+```
+
 
 ## Input Language
 Syntactically, LPMLN differs between "soft" rules and "hard" rules, where "soft" rules have a (real number) weight and "hard" rules the weight "alpha".
@@ -179,6 +200,7 @@ Rules that do not have any weight in the body are assumed to be hard rules.
 To compute LPMLN programs, a rule in an LPMLN program is converted to ASP with weak constraints
 
 By default, only soft rules are converted. To convert hard rules as well, the `--hr` flag can be added on the command line. This option essentially makes hard rules optional, whereas in the default setting all hard rules have to be satisfied as usually in ASP.
+
 
 ## References
 <a id="1">[1]</a>
