@@ -156,11 +156,14 @@ class PlingoTransformer(Transformer):
             asp_rules.append(weak_constraint)
             return asp_rules
 
-    def visit_Rule(self, rule: AST, builder: ProgramBuilder):
+    def visit_Rule(self, rule: AST, **kwargs):  #*builder: ProgramBuilder):
         """
         Visits an LP^MLN rule, converts it to three ASP rules
         if necessary and adds the result to the program builder.
         """
+        builder = kwargs.get('builder', None)
+        file = kwargs.get('file', None)
+
         # Set weight to alpha by default
         head = rule.head
         body = rule.body
@@ -179,6 +182,15 @@ class PlingoTransformer(Transformer):
 
         # Query theory atoms are grounded and then processed
         if self.theory_type == 'query':
+            if file:
+                query_arg = rule.head.term.arguments[0]
+                if str(query_arg.ast_type) == 'ASTType.SymbolicTerm':
+                    show_atom = f'#show {query_arg}/0.'
+                else:
+                    show_atom = f'#show {query_arg.name}/{len(query_arg.arguments)}.'
+                rule = str(rule)
+                rule = rule[1:rule.rfind(')') + 1] + '.'
+                rule = f'{rule}\n{show_atom}'
             return rule
 
         # Evidence theory atoms are converted to integrity constraints
@@ -203,7 +215,11 @@ class PlingoTransformer(Transformer):
 
         # We might obtain more than one rule,
         for r in asp_rules[:-1]:
-            builder.add(r)
+            if builder:
+                builder.add(r)
+            elif file:
+                with open(file, 'a') as lp:
+                    lp.write(f'{str(r)}\n')
 
         return asp_rules[-1]
 

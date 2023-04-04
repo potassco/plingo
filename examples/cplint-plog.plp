@@ -1,0 +1,24 @@
+index(1..2).
+color(red;blue;green).
+boolean(t;f).
+
+&random { col(I,Col) : color(Col) } :- index(I).
+&random { heads(B) : boolean(B) }.
+
+&pr { col(1,red) } = "0.3".
+&pr { col(1,blue) } = "0.7".
+
+&pr { col(2,red) } = "0.2".
+&pr { col(2,green) } = "0.3".
+&pr { col(2,blue) } = "0.5".
+
+&pr { heads(t) } = "0.4".
+
+win :- heads(t), col(_,red).
+win :- col(1,C), col(2,C).
+
+#show col/2.
+#show heads/1.
+
+&obs{ col(2,green) }.
+&query(win).

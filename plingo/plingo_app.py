@@ -1,5 +1,7 @@
-from typing import cast, Sequence, List, Tuple, Optional
+from os.path import join
 import sys
+from tempfile import mkdtemp
+from typing import cast, Sequence, List, Tuple, Optional
 
 from clingo.application import Application, ApplicationOptions, Flag
 from clingo.ast import AST, ProgramBuilder, parse_files, parse_string
@@ -8,6 +10,7 @@ from clingo.control import Control
 from clingo.script import enable_python
 from clingo.symbol import Function, Symbol
 
+from .meta_problog import create_reified_problog
 from .transformer import PlingoTransformer
 from .query import collect_query, check_model_for_query
 from .opt import MinObs, OptEnum
@@ -43,6 +46,8 @@ class PlingoApp(Application):
     evidence_file: str
     balanced_models: Optional[int]
     power_of_ten: int
+    temp: str
+    problog: str
 
     program_name: str = "plingo"
     version: str = "1.0.0"
@@ -58,6 +63,8 @@ class PlingoApp(Application):
         self.evidence_file = ''
         self.balanced_models = None
         self.power_of_ten = 5
+        self.temp = join(mkdtemp(), 'temp.lp')
+        self.problog = ''
 
     def _parse_frontend(self, value: str) -> bool:
         """
@@ -113,6 +120,12 @@ class PlingoApp(Application):
             )
             return False
 
+    def _parse_problog(self, value) -> bool:
+        with open(self.temp, 'w') as temp:
+            temp.write('#show query/1.\n')
+        self.problog = value
+        return True
+
     def register_options(self, options: ApplicationOptions) -> None:
         """
         Register application option.
@@ -153,6 +166,10 @@ class PlingoApp(Application):
             group, 'use-backend',
             'Adds constraints for query approximation in backend instead of using assumptions.',
             self.use_backend)
+        options.add(
+            group, 'problog',
+            '''Translate input to ProbLog program and save in a file.
+                            Use as --problog=output.lp''', self._parse_problog)
 
     def validate_options(self) -> bool:
         if self.two_solve_calls and self.frontend != 'lpmln':
@@ -178,14 +195,27 @@ class PlingoApp(Application):
         with open(path) as file_:
             return file_.read()
 
+    def _save_translation(self, rule):
+        rule = str(rule)
+        if rule != '#program base.':
+            with open(self.temp, 'a') as lp:
+                lp.write(f'{rule}\n')
+
     def _convert(self, ctl: Control, files: Sequence[str]):
         options = [
             self.frontend, self.use_unsat_approach, self.two_solve_calls,
             self.power_of_ten
         ]
-        with ProgramBuilder(ctl) as b:
-            pt = PlingoTransformer(options)
-            parse_files(files, lambda stm: b.add(cast(AST, pt.visit(stm, b))))
+        pt = PlingoTransformer(options)
+        if self.problog:
+            parse_files(
+                files, lambda stm: self._save_translation(
+                    pt.visit(stm, file=self.temp)))
+        else:
+            with ProgramBuilder(ctl) as b:
+                parse_files(
+                    files,
+                    lambda stm: b.add(cast(AST, pt.visit(stm, builder=b))))
 
     def _preprocessing(self, ctl: Control,
                        files: Sequence[str]) -> Tuple[Configuration, MinObs]:
@@ -200,6 +230,10 @@ class PlingoApp(Application):
             enable_python()
             ctl.add("base", [], get_meta_encoding())
             ctl.add("base", [], f'#const _plingo_factor={self.power_of_ten}.')
+            if self.problog:
+                with open(self.temp, 'a') as lp:
+                    lp.write(f'{get_meta_encoding()}\n')
+                    lp.write(f'#const _plingo_factor={self.power_of_ten}.\n')
         if self.two_solve_calls:
             ctl.add("base", [], '#external _plingo_ext_helper.')
         # TODO: Make sure the _ext_helper atom is not contained in the program.
@@ -283,9 +317,12 @@ class PlingoApp(Application):
         Parse clingo program with weights and convert to ASP with weak constraints.
         '''
         obs = self._preprocessing(ctl, files)
-        ctl.ground([("base", [])])
-        self.query = collect_query(ctl.theory_atoms, self.balanced_models)
-        model_costs = self._solve(ctl, obs)
+        if self.problog:
+            create_reified_problog(self.temp, self.problog)
+        else:
+            ctl.ground([("base", [])])
+            self.query = collect_query(ctl.theory_atoms, self.balanced_models)
+            model_costs = self._solve(ctl, obs)
 
-        if model_costs != []:
-            self._probabilities(model_costs, obs.priorities)
+            if model_costs != []:
+                self._probabilities(model_costs, obs.priorities)

@@ -1,0 +1,15 @@
+heads :- &problog("0.4").
+col(1,red) :- &log("0.3").
+col(1,blue) :- &log("0.7").
+col(2,red) :- &log("0.2").
+col(2,green) :- &log("0.3").
+col(2,blue) :- &log("0.5").
+
+:-  not { col(C,_) } = 1, C=1..2.
+
+win :- heads, col(_,red).
+win :- col(1,C), col(2,C).
+
+% &evidence(col(2,green),true).
+&query(win).
+&query(win, col(2,green)).
