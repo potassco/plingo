@@ -50,7 +50,7 @@ class PlingoApp(Application):
     problog: str
 
     program_name: str = "plingo"
-    version: str = "1.0.0"
+    version: str = "1.1.0"
 
     def __init__(self):
         self.display_all_probs = Flag(False)
